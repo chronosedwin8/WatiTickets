@@ -276,14 +276,18 @@ statsRouter.get(
                 [tenant, patron, termino]
             ),
             query(
-                `SELECT id, name, asset_tag, serial_number, status
+                // Se busca también por modelo y fabricante: es como se
+                // identifica un equipo cuando no se tiene la etiqueta a mano.
+                `SELECT id, name, asset_tag, serial_number, status, model, manufacturer
            FROM assets
-          WHERE tenant_id = $1 AND (name ILIKE $2 OR asset_tag ILIKE $2 OR serial_number ILIKE $2)
+          WHERE tenant_id = $1
+            AND (name ILIKE $2 OR asset_tag ILIKE $2 OR serial_number ILIKE $2
+                 OR model ILIKE $2 OR manufacturer ILIKE $2)
           ORDER BY created_at DESC LIMIT 8`,
                 [tenant, patron]
             ),
             query(
-                `SELECT id, title, slug, status
+                `SELECT id, title, status, content_type
            FROM kb_articles
           WHERE tenant_id = $1 AND (title ILIKE $2 OR content ILIKE $2)
           ORDER BY created_at DESC LIMIT 8`,

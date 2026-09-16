@@ -360,11 +360,15 @@ export async function list<T = any>(
 
     const where = whereClause(conds)
 
-    // Orden
-    const permitidas = new Set(resource.filterable)
+    // Orden.
+    // Se puede ordenar por cualquier columna visible del recurso: si un dato
+    // se puede leer, también se puede usar para ordenar. Limitarlo a las
+    // columnas filtrables dejaba fuera el propio orden por defecto de varios
+    // recursos (por ejemplo «name» en categorías o proyectos).
     let orders: { column: string; ascending: boolean }[] = []
     if (options.order) {
-        if (!permitidas.has(options.order)) {
+        const ordenables = new Set(await readableColumns(resource))
+        if (!ordenables.has(options.order)) {
             throw badRequest(`No se puede ordenar por "${options.order}" en ${resource.name}.`)
         }
         orders = [{ column: options.order, ascending: options.dir !== 'desc' }]

@@ -1,44 +1,30 @@
-import { useState } from 'react'
-import { Menu, Search, Bell } from 'lucide-react'
+import { Menu } from 'lucide-react'
 import { UserMenu } from './UserMenu'
-import { Input } from '@/components/ui/Input'
+import { BuscadorGlobal } from './BuscadorGlobal'
+import { Notificaciones } from './Notificaciones'
 
 interface TopNavbarProps {
     onMenuClick: () => void
 }
 
 export function TopNavbar({ onMenuClick }: TopNavbarProps) {
-    const [searchQuery, setSearchQuery] = useState('')
-    const [hasNotifications] = useState(false)
-
     return (
-        <div className="px-6 pt-4 pb-4 shrink-0 z-40 print:hidden">
-            <header className="bg-white/95 backdrop-blur-sm rounded-xl shadow-sm h-[62px] px-4 sm:px-6 flex items-center justify-between transition-all duration-300">
-                <div className="flex items-center flex-1 gap-4">
+        <div className="z-40 shrink-0 px-6 pb-4 pt-4 print:hidden">
+            <header className="flex h-[62px] items-center justify-between rounded-xl bg-white/95 px-4 shadow-sm backdrop-blur-sm transition-all duration-300 sm:px-6">
+                <div className="flex flex-1 items-center gap-4">
                     <button
                         onClick={onMenuClick}
-                        className="lg:hidden p-1 -ml-2 text-slate-500 hover:text-slate-700"
+                        aria-label="Abrir menú"
+                        className="-ml-2 p-1 text-slate-500 hover:text-slate-700 lg:hidden"
                     >
                         <Menu size={24} />
                     </button>
 
-                    <div className="hidden md:flex items-center w-full max-w-sm relative">
-                        <Search size={18} className="absolute left-3 text-slate-400" />
-                        <Input 
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Buscar... (Ctrl+k)" 
-                            className="pl-9 bg-slate-50 border-transparent focus:border-indigo-500 w-full"
-                        />
-                    </div>
+                    <BuscadorGlobal />
                 </div>
 
-                <div className="flex items-center gap-4 sm:gap-5">
-                    <button className="text-[var(--slate-500)] hover:text-[var(--slate-800)] relative p-2 rounded-full hover:bg-[var(--slate-100)] transition-colors">
-                        <Bell size={20} />
-                        {hasNotifications && <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>}
-                    </button>
-
+                <div className="flex items-center gap-3 sm:gap-4">
+                    <Notificaciones />
                     <UserMenu />
                 </div>
             </header>
