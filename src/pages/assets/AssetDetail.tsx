@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { assetsApi, assetGroupsApi, type AssetWithRelations, listar } from '@/lib/api'
 import { formatRelativeTime } from '@/lib/utils'
 import {
@@ -32,6 +32,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Progress } from '@/components/ui/progress'
 import { statusConfig } from './constants'
 import { TechnicalSpecs } from './TechnicalSpecs'
+import { EspecificacionesTecnicas } from './EspecificacionesTecnicas'
 import { toast } from '@/hooks/use-toast'
 
 // Helper to map technical fields to human readable labels
@@ -181,7 +182,19 @@ export function AssetDetail() {
     const [asset, setAsset] = useState<AssetWithRelations | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
-    const [activeTab, setActiveTab] = useState<'details' | 'specs' | 'history'>('details')
+    // La pestaña vive en la URL: así se puede compartir un enlace directo a
+    // la ficha técnica o al historial de un equipo.
+    const [searchParams, setSearchParams] = useSearchParams()
+    const tabParam = searchParams.get('tab')
+    const activeTab: 'details' | 'specs' | 'history' =
+        tabParam === 'specs' || tabParam === 'history' ? tabParam : 'details'
+
+    const setActiveTab = (tab: 'details' | 'specs' | 'history') => {
+        const params = new URLSearchParams(searchParams)
+        if (tab === 'details') params.delete('tab')
+        else params.set('tab', tab)
+        setSearchParams(params, { replace: true })
+    }
     const [history, setHistory] = useState<any[]>([])
     const [selectedHistory, setSelectedHistory] = useState<any | null>(null)
     const [loadingHistory, setLoadingHistory] = useState(false)
@@ -791,9 +804,19 @@ export function AssetDetail() {
                             </Card>
                         </>
                     ) : (
-                        <TechnicalSpecs
-                            data={(asset.hardware_info && Object.keys(asset.hardware_info).length > 0) ? asset.hardware_info : asset.custom_fields}
+                        <EspecificacionesTecnicas
+                            assetId={asset.id}
+                            hardwareInfo={asset.hardware_info as Record<string, unknown> | null}
+                            customFields={asset.custom_fields as Record<string, unknown> | null}
+                            categoriaId={asset.type?.ficha_tecnica ?? null}
+                            nombre={asset.name}
+                            modelo={asset.model}
+                            fabricante={asset.manufacturer}
+                            ultimoReporte={(asset as any).last_seen_at ?? null}
                             onCreateGroup={handleCreateGroup}
+                            onGuardado={(nuevos) =>
+                                setAsset(prev => prev ? { ...prev, custom_fields: nuevos as any } : prev)
+                            }
                         />
                     )}
                 </div>

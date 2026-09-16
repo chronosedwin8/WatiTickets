@@ -506,6 +506,61 @@ export const CAPITULOS: Capitulo[] = [
                 ],
             },
             {
+                id: 'ficha-por-tipo',
+                titulo: 'La ficha técnica cambia según el equipo',
+                resumen: 'Por qué un teléfono y un computador piden datos distintos.',
+                bloques: [
+                    {
+                        tipo: 'parrafo',
+                        texto:
+                            'El agente automático sólo funciona en computadores con Windows. Un teléfono, ' +
+                            'una impresora o un switch nunca van a reportarse solos, así que su información ' +
+                            'técnica se registra a mano. Para que eso no signifique llenar campos que no ' +
+                            'aplican, cada tipo de activo tiene su propia ficha.',
+                    },
+                    {
+                        tipo: 'tabla',
+                        columnas: ['Tipo de equipo', 'Qué se le registra'],
+                        filas: [
+                            ['Computador', 'Procesador, memoria, almacenamiento, sistema operativo y red'],
+                            ['Teléfono o tableta', 'IMEI, línea telefónica, operador, plan de datos, almacenamiento y salud de la batería'],
+                            ['Impresora', 'Tecnología, referencia del tóner, contador de páginas y conectividad'],
+                            ['Equipo de red', 'Puertos, PoE, IP de administración, VLANs, firmware y posición en el rack'],
+                            ['Servidor', 'Procesadores, RAM, RAID, virtualización, servicios que aloja e IP de gestión'],
+                            ['UPS', 'Capacidad en VA, autonomía, baterías y qué equipos protege'],
+                            ['Monitor o proyector', 'Tamaño, resolución, tipo de panel y conexiones'],
+                        ],
+                    },
+                    {
+                        tipo: 'pasos',
+                        titulo: 'Completar la ficha de un equipo',
+                        items: [
+                            'Abre el activo y entra a la pestaña «Información Técnica».',
+                            'Si el tipo aún no está asignado, el sistema lo deduce del nombre y te lo propone.',
+                            'Pulsa «Completar ficha».',
+                            'Rellena los campos que apliquen; puedes dejar vacíos los que no conozcas.',
+                            'Guarda. El indicador de arriba muestra cuántos campos llevas completos.',
+                        ],
+                    },
+                    {
+                        tipo: 'aviso',
+                        estilo: 'consejo',
+                        titulo: 'Asigna el tipo correcto',
+                        texto:
+                            'El tipo se elige al crear o editar el activo, y es lo que determina qué campos ' +
+                            'se piden. Si un equipo muestra la etiqueta «Tipo sugerido», conviene abrirlo y ' +
+                            'fijar el tipo real para que la ficha deje de ser una suposición.',
+                    },
+                    {
+                        tipo: 'parrafo',
+                        texto:
+                            'En los computadores que sí reportan por el agente verás dos vistas: el informe ' +
+                            'automático, con todo lo que envió el equipo, y la ficha del tipo, donde puedes ' +
+                            'anotar lo que el agente no sabe, como el contrato o la ubicación física.',
+                    },
+                ],
+            },
+            {
                 id: 'grupos',
                 titulo: 'Grupos de activos',
                 resumen: 'Agrupar equipos idénticos para tratarlos en bloque.',

@@ -30,6 +30,7 @@ export function AssetForm() {
     const [users, setUsers] = useState<Profile[]>([])
     const [assetGroups, setAssetGroups] = useState<any[]>([])
     const [departments, setDepartments] = useState<any[]>([])
+    const [assetTypes, setAssetTypes] = useState<any[]>([])
     const [error, setError] = useState<string | null>(null)
 
     const [formData, setFormData] = useState({
@@ -54,6 +55,7 @@ export function AssetForm() {
         insurance_expiry: '',
         vendor_name: '',
         department_id: '',
+        asset_type_id: '',
     })
 
     const [customFields, setCustomFields] = useState<CustomField[]>([])
@@ -62,16 +64,18 @@ export function AssetForm() {
         const loadDependencies = async () => {
             if (tenant?.id) {
                 try {
-                    const [locs, profiles, groups, depts] = await Promise.all([
+                    const [locs, profiles, groups, depts, tipos] = await Promise.all([
                         locationsApi.getAll(tenant.id),
                         profilesApi.getAll(),
                         assetGroupsApi.getAll(),
-                        listar('teams', { order: 'name' })
+                        listar('teams', { order: 'name' }),
+                        listar('asset_types', { order: 'name' })
                     ])
                     setLocations(locs || [])
                     setUsers(profiles || [])
                     setAssetGroups(groups || [])
                     setDepartments(depts || [])
+                    setAssetTypes(tipos || [])
                 } catch (e) {
                     if (import.meta.env.DEV) console.error("Error loading dependencies", e)
                 }
@@ -109,6 +113,7 @@ export function AssetForm() {
                             insurance_expiry: asset.insurance_expiry?.split('T')[0] || '',
                             vendor_name: asset.vendor_name || '',
                             department_id: asset.department_id || '',
+                            asset_type_id: asset.asset_type_id || '',
                         })
 
                         // Parse custom fields
@@ -188,6 +193,7 @@ export function AssetForm() {
                 vendor_name: formData.vendor_name || null,
                 custom_fields: customFieldsObj,
                 department_id: formData.department_id || null,
+                asset_type_id: formData.asset_type_id || null,
             }
 
             if (isEdit && id) {
@@ -245,6 +251,22 @@ export function AssetForm() {
                             <div className="space-y-1.5">
                                 <label className="text-sm font-semibold text-slate-700">Tag / Código</label>
                                 <Input value={formData.asset_tag} onChange={(e) => setFormData({ ...formData, asset_tag: e.target.value })} placeholder="AST-0001" />
+                            </div>
+                            <div className="space-y-1.5">
+                                <label className="text-sm font-semibold text-slate-700">Tipo de activo</label>
+                                <select
+                                    value={formData.asset_type_id}
+                                    onChange={(e) => setFormData({ ...formData, asset_type_id: e.target.value })}
+                                    className="w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-lg p-2.5"
+                                >
+                                    <option value="">— Sin definir —</option>
+                                    {assetTypes.map(t => (
+                                        <option key={t.id} value={t.id}>{t.name}</option>
+                                    ))}
+                                </select>
+                                <p className="text-xs text-slate-500">
+                                    Determina qué campos técnicos se piden en la ficha del equipo.
+                                </p>
                             </div>
                             <div className="space-y-1.5">
                                 <label className="text-sm font-semibold text-slate-700">Estado</label>

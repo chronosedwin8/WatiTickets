@@ -68,7 +68,14 @@ export interface MaintenanceActivity {
 export interface AssetWithRelations extends Asset {
     location?: { id: string; name: string; address?: string | null } | null
     assigned_user?: Profile | null
-    type?: { id: string; name: string; category?: string | null; icon?: string | null } | null
+    type?: {
+        id: string
+        name: string
+        category?: string | null
+        /** Plantilla de ficha técnica que aplica a este tipo. */
+        ficha_tecnica?: string | null
+        icon?: string | null
+    } | null
     team?: { id: string; name: string } | null
     asset_group?: { id: string; name: string } | null
     work_orders?: WorkOrder[]
