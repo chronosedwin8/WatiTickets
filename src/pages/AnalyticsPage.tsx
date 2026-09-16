@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTenant } from '@/contexts/TenantContext'
 import { useAuth } from '@/contexts/AuthContext'
-import { ticketsApi, userStoriesApi, workOrdersApi, listar } from '@/lib/api'
+import { ticketsApi, userStoriesApi, workOrdersApi, listar, teamsApi } from '@/lib/api'
 import { toast } from '@/hooks/use-toast'
 import {
     BarChart,
@@ -34,7 +34,7 @@ import { InfoTooltip } from '@/components/ui/InfoTooltip'
 
 export function AnalyticsPage() {
     const { primaryColor, tenant } = useTenant()
-    const { profile } = useAuth()
+    const { profile, user } = useAuth()
     const [loading, setLoading] = useState(true)
     const [teams, setTeams] = useState<{ id: string; name: string }[]>([])
     const [teamsLoaded, setTeamsLoaded] = useState(false)
@@ -68,24 +68,13 @@ export function AnalyticsPage() {
                 const data = await listar<{ id: string; name: string }>('teams', { order: 'name' })
                 setTeams(data)
 
-                // Set initial team filter based on user role
-                if (profile && profile.role !== 'admin') {
-                    if (profile.department && data) {
-                        // Try multiple matching strategies: exact, case-insensitive, partial
-                        const dept = profile.department
-                        const userTeam =
-                            data.find(t => t.name === dept) ||
-                            data.find(t => t.name.toLowerCase() === dept.toLowerCase()) ||
-                            data.find(t =>
-                                t.name.toLowerCase().includes(dept.toLowerCase()) ||
-                                dept.toLowerCase().includes(t.name.toLowerCase())
-                            )
-
-                        if (userTeam) {
-                            setSelectedTeam(userTeam.id)
-                        }
-                        // If no match found, keep 'all' — admin should fix the user's department
-                    }
+                // El departamento de una persona se toma de su pertenencia real
+                // a equipos, no del texto de su perfil: ese texto es sólo una
+                // etiqueta y puede no coincidir con ningún equipo.
+                if (profile && profile.role !== 'admin' && user?.id) {
+                    const misEquipos = await teamsApi.getUserTeams(user.id)
+                    const primero = misEquipos.find((id: string) => data.some(t => t.id === id))
+                    if (primero) setSelectedTeam(primero)
                 }
 
                 setTeamsLoaded(true)

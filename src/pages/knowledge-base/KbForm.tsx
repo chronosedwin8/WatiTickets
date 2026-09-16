@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTenant } from '@/contexts/TenantContext'
 import { useAuth } from '@/contexts/AuthContext'
-import { kbApi, listar } from '@/lib/api'
+import { kbApi, listar, teamsApi } from '@/lib/api'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { RichTextEditor } from '@/components/common/RichTextEditor'
@@ -20,6 +20,7 @@ export function KbForm() {
 
     const [loading, setLoading] = useState(false)
     const [departments, setDepartments] = useState<any[]>([])
+    const [misEquipos, setMisEquipos] = useState<string[]>([])
     const [categories, setCategories] = useState<any[]>([])
 
     const [formData, setFormData] = useState({
@@ -47,11 +48,10 @@ export function KbForm() {
                 setCategories(cats || [])
 
                 let userDeptId = ''
-                if (!isAdmin && profile?.department) {
-                    const userDept = deptsList.find((d: any) =>
-                        d.id === profile.department || d.name.toLowerCase() === profile.department?.toLowerCase()
-                    )
-                    userDeptId = userDept?.id || ''
+                if (!isAdmin && profile?.id) {
+                    const misEquipos = await teamsApi.getUserTeams(profile.id)
+                    userDeptId = misEquipos.find((id: string) => deptsList.some((d: any) => d.id === id)) ?? ''
+                    setMisEquipos(misEquipos)
                 }
 
                 if (!isEditing) {
@@ -112,7 +112,7 @@ export function KbForm() {
 
     const availableDepartments = isAdmin
         ? departments
-        : departments.filter(d => profile?.department && (d.id === profile.department || d.name.toLowerCase() === profile.department.toLowerCase()))
+        : departments.filter(d => misEquipos.includes(d.id))
 
     return (
         <div className="max-w-4xl mx-auto animate-fade-in relative z-10 pb-20">

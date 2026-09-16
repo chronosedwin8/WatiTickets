@@ -13,7 +13,7 @@ import { z } from 'zod'
 import { query, queryOne, transaction } from '../db/pool.js'
 import { asyncHandler } from '../core/asyncHandler.js'
 import { badRequest, notFound, forbidden } from '../core/errors.js'
-import { requireAuth, tenantId, userId, esStaff } from '../auth/middleware.js'
+import { requireAuth, tenantId, userId, esStaff, RANGO_GESTION } from '../auth/middleware.js'
 import { withActor } from '../core/actor.js'
 import { config } from '../config.js'
 import {
@@ -23,10 +23,18 @@ import {
 export const ticketsRouter = Router()
 ticketsRouter.use(requireAuth)
 
+/** Quien gestiona puede repartir trabajo entre departamentos. */
+function puedeGestionar(req: any): boolean {
+    return RANGO_GESTION.includes(req.user?.role)
+}
+
 /** Comprueba que el ticket pertenece a la organización del usuario. */
 async function ticketDelTenant(id: string, tenant: string) {
-    const fila = await queryOne<{ id: string; number: number; title: string; requester_id: string }>(
-        'SELECT id, number, title, requester_id FROM tickets WHERE id = $1 AND tenant_id = $2',
+    const fila = await queryOne<{
+        id: string; number: number; title: string
+        requester_id: string; team_id: string | null
+    }>(
+        'SELECT id, number, title, requester_id, team_id FROM tickets WHERE id = $1 AND tenant_id = $2',
         [id, tenant]
     )
     if (!fila) throw notFound('El ticket')
@@ -141,12 +149,42 @@ ticketsRouter.put(
         const ids = [...new Set(parsed.data.asignados)]
 
         if (ids.length > 0) {
-            const validos = await query<{ id: string }>(
-                'SELECT id FROM profiles WHERE id = ANY($1) AND tenant_id = $2',
+            const validos = await query<{ id: string; full_name: string | null; role: string }>(
+                'SELECT id, full_name, role FROM profiles WHERE id = ANY($1) AND tenant_id = $2 AND is_active = true',
                 [ids, tenant]
             )
             if (validos.length !== ids.length) {
-                throw badRequest('Alguna de las personas indicadas no pertenece a la organización.')
+                throw badRequest(
+                    'Alguna de las personas indicadas no pertenece a la organización o está desactivada.'
+                )
+            }
+
+            const clientes = validos.filter((v) => v.role === 'customer')
+            if (clientes.length > 0) {
+                throw badRequest(
+                    `No se puede asignar un ticket a ${clientes[0].full_name ?? 'esa persona'}: ` +
+                    `su rol sólo permite reportar incidencias.`
+                )
+            }
+
+            // El trabajo se reparte dentro del departamento del ticket. Quien
+            // gestiona puede saltárselo para escalar a otra área.
+            if (ticket.team_id && !puedeGestionar(req)) {
+                const fuera = await query<{ full_name: string | null }>(
+                    `SELECT p.full_name FROM profiles p
+                    WHERE p.id = ANY($1)
+                      AND NOT EXISTS (
+                        SELECT 1 FROM team_members m
+                         WHERE m.profile_id = p.id AND m.team_id = $2
+                      )`,
+                    [ids, ticket.team_id]
+                )
+                if (fuera.length > 0) {
+                    throw badRequest(
+                        `${fuera[0].full_name ?? 'Esa persona'} no pertenece al departamento del ticket. ` +
+                        `Cambia el departamento del ticket o pide a un administrador que lo reasigne.`
+                    )
+                }
             }
         }
 

@@ -60,7 +60,7 @@ export function TicketDetail({ ticketId: propId, isEmbedded = false }: TicketDet
     const { id: paramId } = useParams()
     const id = propId || paramId
     const navigate = useNavigate()
-    const { user } = useAuth()
+    const { user, profile } = useAuth()
     const { tenant } = useTenant()
 
     const [ticket, setTicket] = useState<TicketWithRelations | null>(null)
@@ -246,8 +246,14 @@ export function TicketDetail({ ticketId: propId, isEmbedded = false }: TicketDet
                 if (!tenantId) return
 
                 try {
+                    // El trabajo se reparte dentro del departamento del ticket.
+                    // Quien gestiona ve a todo el personal, porque es quien
+                    // escala un caso a otra área cuando hace falta.
+                    const puedeReasignarEntreAreas =
+                        profile?.role === 'admin' || profile?.role === 'owner' || profile?.role === 'manager'
+
                     let users: Profile[] = []
-                    if (ticket?.team_id) {
+                    if (ticket?.team_id && !puedeReasignarEntreAreas) {
                         users = await teamsApi.getMembers(ticket.team_id)
                     } else {
                         users = await profilesApi.getAll(tenantId)
@@ -259,7 +265,7 @@ export function TicketDetail({ ticketId: propId, isEmbedded = false }: TicketDet
             }
             loadCandidates()
         }
-    }, [showAssigneeList, ticket?.team_id, tenant?.id])
+    }, [showAssigneeList, ticket?.team_id, tenant?.id, profile?.role])
 
     const toggleAssignee = async (userId: string) => {
         if (!ticket || !tenant?.id) return

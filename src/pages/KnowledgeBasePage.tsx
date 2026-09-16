@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { Routes, Route, Link, useNavigate, useParams } from 'react-router-dom'
 import { useTenant } from '@/contexts/TenantContext'
 import { useAuth } from '@/contexts/AuthContext'
-import { kbApi, type KbArticleWithRelations, listar } from '@/lib/api'
+import { kbApi, type KbArticleWithRelations, listar, teamsApi } from '@/lib/api'
 import {
     Search,
     BookOpen,
@@ -31,7 +31,7 @@ import { toast } from '@/hooks/use-toast'
 
 function ArticleList() {
     const { primaryColor, tenant } = useTenant()
-    const { profile } = useAuth()
+    const { profile, user } = useAuth()
     const navigate = useNavigate()
     const isAdmin = profile?.role === 'admin' || profile?.role === 'owner'
     const canDelete = isAdmin || profile?.role === 'manager'
@@ -63,11 +63,9 @@ function ArticleList() {
 
             let departmentIdToFetch: string | undefined = undefined
 
-            if (!isAdmin && profile?.department) {
-                const userDept = deptsList.find((d: any) =>
-                    d.id === profile.department || d.name.toLowerCase() === profile.department?.toLowerCase()
-                )
-                departmentIdToFetch = userDept?.id
+            if (!isAdmin && user?.id) {
+                const misEquipos = await teamsApi.getUserTeams(user.id)
+                departmentIdToFetch = misEquipos.find((id: string) => deptsList.some((d: any) => d.id === id))
             }
 
             const data = await kbApi.getAll(tenantId, departmentIdToFetch)
@@ -82,7 +80,7 @@ function ArticleList() {
 
     useEffect(() => {
         fetchArticles()
-    }, [tenant?.id, isAdmin, profile?.department])
+    }, [tenant?.id, isAdmin, user?.id])
 
     const handleDelete = async (articleId: string, articleTitle: string) => {
         if (!confirm(`¿Estás seguro de eliminar "${articleTitle}"? Esta acción no se puede deshacer.`)) return

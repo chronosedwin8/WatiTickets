@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useTenant } from '@/contexts/TenantContext'
 import { useAuth } from '@/contexts/AuthContext'
-import { assetsApi, type AssetWithRelations, listar } from '@/lib/api'
+import { assetsApi, type AssetWithRelations, listar, teamsApi } from '@/lib/api'
 import {
     Plus,
     Search,
@@ -41,7 +41,7 @@ export function AssetsList() {
     const [departments, setDepartments] = useState<any[]>([])
     const [stats, setStats] = useState({ total: 0, inUse: 0, inStock: 0, maintenance: 0 })
 
-    const { profile } = useAuth()
+    const { profile, user } = useAuth()
     const isAdmin = profile?.role === 'admin' || profile?.role === 'owner'
 
     // ── 11.3 View mode ──────────────────────────────────────────────────────────
@@ -74,12 +74,10 @@ export function AssetsList() {
                 let departmentIdToFetch: string | undefined = undefined
                 let profileDepartmentId: string | undefined = undefined
 
-                if (!isAdmin && profile?.department) {
-                    // Try to match profile department to either team ID or team name
-                    const userDept = departmentsList.find(d =>
-                        d.id === profile.department || d.name.toLowerCase() === profile.department?.toLowerCase()
-                    )
-                    profileDepartmentId = userDept?.id
+                if (!isAdmin && user?.id) {
+                    // Se usa la pertenencia real a equipos como fuente de verdad.
+                    const misEquipos = await teamsApi.getUserTeams(user.id)
+                    profileDepartmentId = misEquipos.find((id: string) => departmentsList.some((d: any) => d.id === id))
                     departmentIdToFetch = profileDepartmentId
                 }
 
@@ -109,7 +107,7 @@ export function AssetsList() {
             }
         }
         fetchData()
-    }, [tenant?.id, isAdmin, profile?.department])
+    }, [tenant?.id, isAdmin, user?.id])
 
     // Filters & Pagination Logic
     const filteredAssets = useMemo(() => {

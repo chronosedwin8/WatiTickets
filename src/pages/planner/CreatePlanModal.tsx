@@ -51,11 +51,11 @@ export function CreatePlanModal({ open, onClose, onPlanCreated }: CreatePlanModa
             teamsApi.getAll(tenant.id).then((data: any[]) => {
                 setTeams(data)
                 // If user is a manager, auto-select their department
-                if (profile?.role === 'manager' && profile?.department) {
-                    const myTeam = data.find((t: any) => t.name === profile.department)
-                    if (myTeam) {
-                        setSelectedTeamId(myTeam.id)
-                    }
+                if (profile?.role === 'manager' && profile?.id) {
+                    teamsApi.getUserTeams(profile.id).then(misEquipos => {
+                        const primero = misEquipos.find((id: string) => data.some((t: any) => t.id === id))
+                        if (primero) setSelectedTeamId(primero)
+                    }).catch(() => undefined)
                 }
             }).catch(err => { if (import.meta.env.DEV) console.error(err) })
         }

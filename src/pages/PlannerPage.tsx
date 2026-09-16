@@ -17,7 +17,7 @@ interface Team {
 
 export function PlannerPage() {
     const { primaryColor, tenant } = useTenant()
-    const { profile } = useAuth()
+    const { profile, user } = useAuth()
     const [view, setView] = useState<'month' | 'agenda'>('month')
     const [currentDate, setCurrentDate] = useState(new Date())
     const [activities, setActivities] = useState<MaintenanceActivity[]>([])
@@ -37,11 +37,11 @@ export function PlannerPage() {
         teamsApi.getAll(tenant.id).then((data: any[]) => {
             setTeams(data)
             // Auto-select department for managers
-            if (profile?.role === 'manager' && profile?.department) {
-                const myTeam = data.find((t: any) => t.name === profile.department)
-                if (myTeam) {
-                    setSelectedTeamId(myTeam.id)
-                }
+            if (profile?.role === 'manager' && user?.id) {
+                teamsApi.getUserTeams(user.id).then(misEquipos => {
+                    const primero = misEquipos.find((id: string) => data.some((t: any) => t.id === id))
+                    if (primero) setSelectedTeamId(primero)
+                }).catch(() => undefined)
             }
         }).catch(err => { if (import.meta.env.DEV) console.error(err) })
     }, [tenant?.id, profile])

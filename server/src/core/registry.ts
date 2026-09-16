@@ -28,6 +28,37 @@ export interface Relation {
     orderBy?: string
 }
 
+/**
+ * Contexto que recibe una regla de visibilidad para construir su condición.
+ */
+export interface ArgsVisibilidad {
+    /** Alias de la tabla en la consulta. */
+    alias: string
+    /** Identificador del usuario que pregunta. */
+    usuario: string
+    /** Rol del usuario. */
+    rol: UserRole
+    /** Equipos a los que pertenece. */
+    equipos: string[]
+    /** Registra un valor y devuelve su marcador ($1, $2…). */
+    param: (valor: unknown) => string
+}
+
+/**
+ * Restringe QUÉ FILAS ve cada usuario dentro de su organización.
+ *
+ * Los permisos por rol deciden si alguien puede entrar a un recurso; la
+ * visibilidad decide cuánto ve dentro. Sin esto, un agente de un
+ * departamento podría leer el trabajo de otro, y quien sólo reporta
+ * incidencias vería las de toda la organización.
+ */
+export interface Visibilidad {
+    /** Roles que ven todos los registros de su organización. */
+    verTodo: UserRole[]
+    /** Condición SQL que se aplica al resto. */
+    condicion: (args: ArgsVisibilidad) => string
+}
+
 export interface Resource {
     /** Nombre en la URL: /api/v1/<name> */
     name: string
@@ -46,6 +77,8 @@ export interface Resource {
     defaultOrder?: { column: string; ascending: boolean }
     /** Relaciones que se pueden pedir con ?expand=. */
     relations?: Relation[]
+    /** Restringe qué filas ve cada usuario. Sin esto, ve todas las de su organización. */
+    visibilidad?: Visibilidad
     /** Roles autorizados por operación. Si se omite, se permite al staff. */
     permissions?: {
         list?: UserRole[]
@@ -72,6 +105,11 @@ const equipoPorDepartamento: Relation = {
 const departamento: Relation = {
     as: 'department', table: 'teams', kind: 'one', on: 'department_id', columns: ['id', 'name'],
 }
+// ── Reglas de visibilidad reutilizadas ─────────────────────────────────
+/** Sólo los registros del departamento (o departamentos) del usuario. */
+const porDepartamento = (columna: string) => ({ alias, equipos, param }: ArgsVisibilidad) =>
+    equipos.length === 0 ? 'FALSE' : `"${alias}"."${columna}" = ANY(${param(equipos)})`
+
 const categoria: Relation = {
     as: 'category', table: 'categories', kind: 'one', on: 'category_id', columns: ['id', 'name', 'color'],
 }
@@ -111,6 +149,19 @@ export const resources: Resource[] = [
                 nested: perfil('user', 'user_id', ['id', 'full_name', 'avatar_url', 'email', 'role']),
             },
         ],
+        // Quien sólo reporta incidencias ve las suyas; el personal, las de
+        // sus departamentos; la gestión, todas.
+        visibilidad: {
+            verTodo: GESTION,
+            condicion: ({ alias, rol, usuario, equipos, param }) =>
+                rol === 'customer'
+                    ? `"${alias}"."requester_id" = ${param(usuario)}`
+                    : equipos.length === 0
+                        ? `("${alias}"."assignee_id" = ${param(usuario)} OR "${alias}"."requester_id" = ${param(usuario)})`
+                        : `("${alias}"."team_id" = ANY(${param(equipos)})`
+                        + ` OR "${alias}"."assignee_id" = ${param(usuario)}`
+                        + ` OR "${alias}"."requester_id" = ${param(usuario)})`,
+        },
         permissions: { list: TODOS, read: TODOS, create: TODOS, update: STAFF, delete: GESTION },
     },
     {
@@ -122,6 +173,28 @@ export const resources: Resource[] = [
         tenantScoped: true,
         defaultOrder: { column: 'created_at', ascending: true },
         relations: [perfil('author', 'author_id')],
+        // Un comentario se ve si se ve su ticket. Además, quien sólo reporta
+        // no tiene por qué leer las notas internas del equipo.
+        visibilidad: {
+            verTodo: GESTION,
+            condicion: ({ alias, rol, usuario, equipos, param }) => {
+                const alcanceTicket =
+                    rol === 'customer'
+                        ? `_tk."requester_id" = ${param(usuario)}`
+                        : equipos.length === 0
+                            ? `(_tk."assignee_id" = ${param(usuario)} OR _tk."requester_id" = ${param(usuario)})`
+                            : `(_tk."team_id" = ANY(${param(equipos)})`
+                            + ` OR _tk."assignee_id" = ${param(usuario)}`
+                            + ` OR _tk."requester_id" = ${param(usuario)})`
+
+                const soloPublicos = rol === 'customer'
+                    ? ` AND COALESCE("${alias}"."is_public", true) = true`
+                    : ''
+
+                return `EXISTS (SELECT 1 FROM tickets _tk`
+                    + ` WHERE _tk."id" = "${alias}"."ticket_id" AND ${alcanceTicket})${soloPublicos}`
+            },
+        },
         permissions: { list: TODOS, read: TODOS, create: TODOS, update: STAFF, delete: GESTION },
     },
     {
@@ -148,6 +221,7 @@ export const resources: Resource[] = [
         tenantScoped: true,
         defaultOrder: { column: 'created_at', ascending: false },
         relations: [perfil('assignee', 'assignee_id'), equipoPorDepartamento, departamento, categoria],
+        visibilidad: { verTodo: GESTION, condicion: porDepartamento('department_id') },
     },
     {
         name: 'changes',
@@ -163,6 +237,7 @@ export const resources: Resource[] = [
         tenantScoped: true,
         defaultOrder: { column: 'created_at', ascending: false },
         relations: [perfil('requester', 'requester_id'), perfil('assignee', 'assignee_id'), equipoPorDepartamento, departamento],
+        visibilidad: { verTodo: GESTION, condicion: porDepartamento('department_id') },
     },
     {
         name: 'service_catalog_items',
@@ -281,6 +356,15 @@ export const resources: Resource[] = [
             { as: 'asset', table: 'assets', kind: 'one', on: 'asset_id', columns: ['id', 'name', 'asset_tag'] },
             { as: 'location', table: 'locations', kind: 'one', on: 'location_id', columns: ['id', 'name'] },
         ],
+        // El técnico ve lo de su departamento y, además, lo que tenga asignado.
+        visibilidad: {
+            verTodo: GESTION,
+            condicion: ({ alias, usuario, equipos, param }) =>
+                equipos.length === 0
+                    ? `"${alias}"."technician_id" = ${param(usuario)}`
+                    : `("${alias}"."department_id" = ANY(${param(equipos)})`
+                    + ` OR "${alias}"."technician_id" = ${param(usuario)})`,
+        },
     },
     {
         name: 'work_order_comments',
@@ -316,6 +400,14 @@ export const resources: Resource[] = [
         tenantScoped: true,
         defaultOrder: { column: 'start_date', ascending: false },
         relations: [{ as: 'team', table: 'teams', kind: 'one', on: 'team_id', columns: ['id', 'name'] }],
+        // Un plan sin equipo es de alcance general: lo ve todo el personal.
+        visibilidad: {
+            verTodo: GESTION,
+            condicion: ({ alias, equipos, param }) =>
+                equipos.length === 0
+                    ? `"${alias}"."team_id" IS NULL`
+                    : `("${alias}"."team_id" IS NULL OR "${alias}"."team_id" = ANY(${param(equipos)}))`,
+        },
     },
     {
         name: 'maintenance_activities',
@@ -336,6 +428,17 @@ export const resources: Resource[] = [
                 nested: perfil('user', 'user_id', ['id', 'full_name', 'avatar_url']),
             },
         ],
+        // Se ven las actividades del propio departamento y las asignadas a uno.
+        visibilidad: {
+            verTodo: GESTION,
+            condicion: ({ alias, usuario, equipos, param }) => {
+                const asignadaAMi = `EXISTS (SELECT 1 FROM activity_assignees aa`
+                    + ` WHERE aa."activity_id" = "${alias}"."id" AND aa."user_id" = ${param(usuario)})`
+                return equipos.length === 0
+                    ? asignadaAMi
+                    : `("${alias}"."team_id" = ANY(${param(equipos)}) OR ${asignadaAMi})`
+            },
+        },
     },
     {
         name: 'activity_assignees',
@@ -414,6 +517,12 @@ export const resources: Resource[] = [
                 columns: ['id', 'name', 'color', 'requires_approval'],
             },
         ],
+        // Cada quien ve sus solicitudes; la gestión, las de toda la organización.
+        visibilidad: {
+            verTodo: GESTION,
+            condicion: ({ alias, usuario, param }) =>
+                `"${alias}"."requester_id" = ${param(usuario)}`,
+        },
         permissions: { list: TODOS, read: TODOS, create: TODOS, update: TODOS, delete: GESTION },
     },
     {

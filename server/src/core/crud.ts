@@ -232,6 +232,49 @@ export interface Ctx {
     tenantId: string | null
     userId: string
     role: UserRole
+    /**
+     * Equipos a los que pertenece el usuario. Se resuelve una sola vez por
+     * petición, la primera vez que un recurso lo necesita.
+     */
+    equipos?: string[]
+}
+
+/** Carga (y memoriza en el contexto) los equipos del usuario. */
+async function equiposDe(ctx: Ctx): Promise<string[]> {
+    if (ctx.equipos) return ctx.equipos
+    const filas = await query<{ team_id: string }>(
+        'SELECT team_id FROM team_members WHERE profile_id = $1',
+        [ctx.userId]
+    )
+    ctx.equipos = filas.map((f) => f.team_id)
+    return ctx.equipos
+}
+
+/**
+ * Condición que limita QUÉ FILAS ve este usuario.
+ *
+ * Devuelve cadena vacía cuando el recurso no restringe, o cuando el rol del
+ * usuario está autorizado a verlo todo.
+ */
+async function condicionVisibilidad(
+    resource: Resource,
+    ctx: Ctx,
+    alias: string,
+    p: Params
+): Promise<string> {
+    const v = resource.visibilidad
+    if (!v) return ''
+    if (v.verTodo.includes(ctx.role)) return ''
+
+    const equipos = await equiposDe(ctx)
+
+    return v.condicion({
+        alias,
+        usuario: ctx.userId,
+        rol: ctx.role,
+        equipos,
+        param: (valor) => p.add(valor),
+    })
 }
 
 function checkPermission(
@@ -302,6 +345,9 @@ export async function list<T = any>(
 
     for (const f of filters) conds.push(buildCondition(f, p, alias))
 
+    const visible = await condicionVisibilidad(resource, ctx, alias, p)
+    if (visible) conds.push(visible)
+
     // Búsqueda de texto libre sobre las columnas relevantes del recurso.
     if (options.search && options.search.trim() !== '') {
         const columnas = COLUMNAS_BUSQUEDA[resource.table]
@@ -350,6 +396,8 @@ export async function list<T = any>(
         const condsCount: string[] = []
         if (resource.tenantScoped) condsCount.push(`${col('tenant_id', alias)} = ${pc.add(ctx.tenantId)}`)
         for (const f of filters) condsCount.push(buildCondition(f, pc, alias))
+        const visibleCount = await condicionVisibilidad(resource, ctx, alias, pc)
+        if (visibleCount) condsCount.push(visibleCount)
         if (options.search && options.search.trim() !== '') {
             const columnas = COLUMNAS_BUSQUEDA[resource.table]
             if (columnas?.length) {
@@ -384,6 +432,9 @@ export async function getById<T = any>(
         if (!ctx.tenantId) throw forbidden('Tu usuario no está asociado a ninguna organización.')
         conds.push(`${col('tenant_id', alias)} = ${p.add(ctx.tenantId)}`)
     }
+
+    const visible = await condicionVisibilidad(resource, ctx, alias, p)
+    if (visible) conds.push(visible)
 
     const baseCols = (await readableColumns(resource)).map((c) => col(c, alias))
     const relCols = resolveExpand(resource, expand).map((r) => relationExpression(r, alias))
