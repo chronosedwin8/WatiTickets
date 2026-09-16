@@ -1,0 +1,522 @@
+<title>TicketWati · Traspaso Técnico</title>
+<meta name="description" content="Informe técnico de traspaso de TicketWati: arquitectura, funcionalidades, estado, seguridad y recomendaciones.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#f6f6fb; --surface:#ffffff; --surface-2:#f0f0f8; --surface-3:#e9e9f4;
+  --ink:#1a1b29; --ink-2:#494b64; --ink-3:#72748d; --line:#e3e3ef; --line-2:#d3d3e4;
+  --accent:#5b5ef0; --accent-2:#4547c9; --accent-soft:#ececfe;
+  --ok:#15803d; --ok-bg:#dcfce7; --ok-line:#bbf7d0;
+  --warn:#b45309; --warn-bg:#fef3c7; --warn-line:#fde68a;
+  --crit:#be123c; --crit-bg:#ffe4e6; --crit-line:#fecdd3;
+  --info:#0369a1; --info-bg:#e0f2fe; --info-line:#bae6fd;
+  --shadow:0 1px 2px rgba(26,27,41,.04),0 4px 16px rgba(26,27,41,.05);
+  --shadow-lift:0 2px 4px rgba(26,27,41,.06),0 12px 32px rgba(26,27,41,.10);
+  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --display:"Bricolage Grotesque","IBM Plex Sans",system-ui,sans-serif;
+}
+:root:not([data-theme="light"]){ @media (prefers-color-scheme: dark){
+  --bg:#111120; --surface:#1a1b2b; --surface-2:#212236; --surface-3:#2a2b44;
+  --ink:#ecedf6; --ink-2:#abadca; --ink-3:#7c7e9d; --line:#2c2d45; --line-2:#3a3b58;
+  --accent:#8f92f8; --accent-2:#a9abfb; --accent-soft:#24264a;
+  --ok:#4ade80; --ok-bg:#0f2f1c; --ok-line:#1c5136;
+  --warn:#fbbf24; --warn-bg:#33260a; --warn-line:#5c460f;
+  --crit:#fb7185; --crit-bg:#3a1220; --crit-line:#63202f;
+  --info:#38bdf8; --info-bg:#0a2839; --info-line:#124c66;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.35);
+  --shadow-lift:0 2px 4px rgba(0,0,0,.4),0 12px 32px rgba(0,0,0,.5);
+}}
+:root[data-theme="dark"]{
+  --bg:#111120; --surface:#1a1b2b; --surface-2:#212236; --surface-3:#2a2b44;
+  --ink:#ecedf6; --ink-2:#abadca; --ink-3:#7c7e9d; --line:#2c2d45; --line-2:#3a3b58;
+  --accent:#8f92f8; --accent-2:#a9abfb; --accent-soft:#24264a;
+  --ok:#4ade80; --ok-bg:#0f2f1c; --ok-line:#1c5136;
+  --warn:#fbbf24; --warn-bg:#33260a; --warn-line:#5c460f;
+  --crit:#fb7185; --crit-bg:#3a1220; --crit-line:#63202f;
+  --info:#38bdf8; --info-bg:#0a2839; --info-line:#124c66;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.35);
+  --shadow-lift:0 2px 4px rgba(0,0,0,.4),0 12px 32px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:1.5rem}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{animation:none!important;transition:none!important}}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.6;
+  font-size:16px;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+h1,h2,h3,h4{font-family:var(--display);font-weight:600;line-height:1.15;text-wrap:balance;margin:0}
+a{color:var(--accent-2);text-decoration:none}
+a:hover{text-decoration:underline}
+code,.mono{font-family:var(--mono);font-size:.86em}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+
+.shell{max-width:1200px;margin:0 auto;padding:0 clamp(1rem,4vw,2.5rem)}
+.grid{display:grid;grid-template-columns:1fr;gap:0}
+@media(min-width:1000px){
+  .grid{grid-template-columns:230px minmax(0,1fr);gap:clamp(2rem,4vw,4rem);align-items:start}
+  .toc-wrap{position:sticky;top:1.5rem;max-height:calc(100vh - 3rem);overflow-y:auto}
+}
+
+/* ── Hero ─────────────────────────────── */
+.hero{border-bottom:1px solid var(--line);background:
+  radial-gradient(120% 100% at 88% -10%,var(--accent-soft) 0%,transparent 55%);}
+.hero-in{padding:clamp(2.5rem,6vw,4.5rem) 0 clamp(2rem,4vw,3rem)}
+.kicker{font-family:var(--mono);font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--accent-2);font-weight:600;display:flex;align-items:center;gap:.7rem;margin-bottom:1.4rem}
+.kicker::before{content:"";width:2rem;height:1px;background:var(--accent)}
+.hero h1{font-size:clamp(2.6rem,7vw,4.6rem);font-weight:700;letter-spacing:-.03em}
+.hero h1 .t{color:var(--accent-2)}
+.hero .lede{font-size:clamp(1.05rem,2.2vw,1.3rem);color:var(--ink-2);max-width:60ch;margin-top:1.1rem;font-weight:400}
+.meta-row{display:flex;flex-wrap:wrap;gap:.5rem .6rem;margin-top:1.8rem}
+.chip{font-family:var(--mono);font-size:.75rem;font-weight:500;padding:.34rem .7rem;border-radius:999px;
+  border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);white-space:nowrap}
+.chip b{color:var(--ink);font-weight:600}
+
+/* ── Metrics strip ────────────────────── */
+.metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);
+  border:1px solid var(--line);border-radius:16px;overflow:hidden;margin-top:2.2rem;box-shadow:var(--shadow)}
+@media(min-width:640px){.metrics{grid-template-columns:repeat(4,1fr)}}
+.metric{background:var(--surface);padding:1.15rem 1.25rem}
+.metric .n{font-family:var(--display);font-size:clamp(1.7rem,4vw,2.3rem);font-weight:700;letter-spacing:-.02em;color:var(--ink);line-height:1}
+.metric .n small{font-size:.9rem;color:var(--ink-3);font-weight:500}
+.metric .l{font-size:.78rem;color:var(--ink-3);margin-top:.45rem;font-weight:500}
+
+/* ── Body layout ──────────────────────── */
+main{padding:clamp(2.5rem,5vw,4rem) 0 5rem}
+.toc{font-size:.85rem}
+.toc .tt{font-family:var(--mono);font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);margin-bottom:.9rem;font-weight:600}
+.toc ol{list-style:none;margin:0;padding:0;counter-reset:s}
+.toc li{counter-increment:s;margin:.1rem 0}
+.toc a{display:flex;gap:.6rem;padding:.34rem .5rem;border-radius:7px;color:var(--ink-2);font-weight:500}
+.toc a::before{content:counter(s,decimal-leading-zero);font-family:var(--mono);font-size:.7rem;color:var(--ink-3);padding-top:.12rem}
+.toc a:hover{background:var(--surface-2);color:var(--ink);text-decoration:none}
+
+section{margin-bottom:clamp(3rem,6vw,4.5rem);scroll-margin-top:1.5rem}
+.eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--accent-2);font-weight:600;display:flex;align-items:center;gap:.6rem;margin-bottom:.7rem}
+.eyebrow .num{color:var(--ink-3)}
+h2.sec{font-size:clamp(1.6rem,3.6vw,2.15rem);font-weight:700;letter-spacing:-.02em;margin-bottom:.4rem}
+.sec-lede{color:var(--ink-2);max-width:68ch;margin-bottom:1.6rem}
+h3.sub{font-size:1.15rem;font-weight:600;margin:2rem 0 .8rem;letter-spacing:-.01em}
+p{max-width:72ch}
+main p{margin:.7rem 0}
+ul.body,ol.body{max-width:72ch;padding-left:1.2rem;margin:.7rem 0}
+ul.body li,ol.body li{margin:.35rem 0;color:var(--ink-2)}
+ul.body li b,ol.body li b{color:var(--ink)}
+
+/* ── Cards ────────────────────────────── */
+.cards{display:grid;gap:1rem;grid-template-columns:1fr}
+@media(min-width:680px){.cards.two{grid-template-columns:1fr 1fr}}
+@media(min-width:820px){.cards.three{grid-template-columns:repeat(3,1fr)}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:1.25rem 1.35rem;box-shadow:var(--shadow)}
+.card h4{font-size:1rem;font-weight:600;margin-bottom:.5rem;display:flex;align-items:center;gap:.55rem}
+.card p{font-size:.9rem;color:var(--ink-2);margin:.3rem 0}
+.card .ico{width:1.6rem;height:1.6rem;flex:none;display:grid;place-items:center;border-radius:7px;
+  background:var(--accent-soft);color:var(--accent-2);font-family:var(--mono);font-size:.8rem;font-weight:600}
+
+/* ── Status pills ─────────────────────── */
+.pill{display:inline-flex;align-items:center;gap:.4rem;font-family:var(--mono);font-size:.7rem;font-weight:600;
+  letter-spacing:.02em;padding:.22rem .55rem;border-radius:6px;border:1px solid;white-space:nowrap;line-height:1.3}
+.pill::before{content:"";width:.5rem;height:.5rem;border-radius:50%;background:currentColor;flex:none}
+.p-ok{color:var(--ok);background:var(--ok-bg);border-color:var(--ok-line)}
+.p-warn{color:var(--warn);background:var(--warn-bg);border-color:var(--warn-line)}
+.p-crit{color:var(--crit);background:var(--crit-bg);border-color:var(--crit-line)}
+.p-info{color:var(--info);background:var(--info-bg);border-color:var(--info-line)}
+
+/* ── Tables ───────────────────────────── */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.88rem;min-width:560px}
+thead th{text-align:left;font-family:var(--mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:600;padding:.75rem 1rem;background:var(--surface-2);border-bottom:1px solid var(--line);white-space:nowrap}
+tbody td{padding:.8rem 1rem;border-bottom:1px solid var(--line);vertical-align:top;color:var(--ink-2)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--surface-2)}
+td .mod{font-weight:600;color:var(--ink);font-family:var(--display)}
+td.mono,.tnum{font-variant-numeric:tabular-nums}
+td .fn{color:var(--ink-2)}
+
+/* ── Security findings ────────────────── */
+.finding{background:var(--surface);border:1px solid var(--line);border-left-width:4px;border-radius:12px;
+  padding:1.15rem 1.35rem;box-shadow:var(--shadow);margin-bottom:1rem}
+.finding.crit{border-left-color:var(--crit)}
+.finding.high{border-left-color:var(--warn)}
+.finding.med{border-left-color:var(--info)}
+.finding.low{border-left-color:var(--ink-3)}
+.finding .fhead{display:flex;flex-wrap:wrap;align-items:center;gap:.6rem;margin-bottom:.5rem}
+.finding .fid{font-family:var(--mono);font-size:.72rem;font-weight:600;color:var(--ink-3)}
+.finding h4{font-size:1.02rem;font-weight:600;flex:1;min-width:220px}
+.finding p{font-size:.9rem;color:var(--ink-2);margin:.4rem 0;max-width:74ch}
+.finding .fix{font-size:.86rem;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);
+  border-radius:8px;padding:.6rem .8rem;margin-top:.7rem}
+.finding .fix b{font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ok);display:block;margin-bottom:.2rem}
+.sev{font-family:var(--mono);font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  padding:.2rem .5rem;border-radius:5px}
+.sev.c{color:var(--crit);background:var(--crit-bg)}
+.sev.h{color:var(--warn);background:var(--warn-bg)}
+.sev.m{color:var(--info);background:var(--info-bg)}
+.sev.l{color:var(--ink-3);background:var(--surface-3)}
+
+/* ── Callouts / code ──────────────────── */
+.note{border:1px solid var(--line);border-radius:12px;padding:1rem 1.2rem;background:var(--surface-2);margin:1.2rem 0;font-size:.9rem;color:var(--ink-2)}
+.note.accent{background:var(--accent-soft);border-color:transparent}
+.note b{color:var(--ink)}
+pre{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:1rem 1.15rem;overflow-x:auto;
+  font-family:var(--mono);font-size:.8rem;line-height:1.65;color:var(--ink);box-shadow:var(--shadow);margin:1rem 0}
+pre .c{color:var(--ink-3)}
+pre .k{color:var(--accent-2)}
+kbd{font-family:var(--mono);font-size:.78em;background:var(--surface-3);border:1px solid var(--line-2);
+  border-bottom-width:2px;border-radius:5px;padding:.05rem .35rem;color:var(--ink)}
+
+/* ── Roadmap / priority list ──────────── */
+.roadmap{display:grid;gap:.7rem}
+.rm{display:grid;grid-template-columns:auto 1fr;gap:1rem;align-items:start;background:var(--surface);
+  border:1px solid var(--line);border-radius:12px;padding:1rem 1.2rem;box-shadow:var(--shadow)}
+.rm .tag{font-family:var(--mono);font-size:.72rem;font-weight:700;letter-spacing:.05em;padding:.3rem .55rem;border-radius:6px;white-space:nowrap;align-self:start}
+.rm.p0 .tag{color:var(--crit);background:var(--crit-bg)}
+.rm.p1 .tag{color:var(--warn);background:var(--warn-bg)}
+.rm.p2 .tag{color:var(--info);background:var(--info-bg)}
+.rm.p3 .tag{color:var(--ink-3);background:var(--surface-3)}
+.rm h4{font-size:.98rem;font-weight:600;margin-bottom:.15rem}
+.rm p{font-size:.87rem;color:var(--ink-2);margin:0;max-width:72ch}
+
+.legend{display:flex;flex-wrap:wrap;gap:.5rem;margin:0 0 1.4rem}
+hr.div{border:none;border-top:1px solid var(--line);margin:2.5rem 0}
+.foot{border-top:1px solid var(--line);padding:2rem 0 3rem;color:var(--ink-3);font-size:.85rem}
+.foot .mono{color:var(--ink-2)}
+sup.ref{font-family:var(--mono);font-size:.62rem;color:var(--accent-2);font-weight:600}
+</style>
+
+<div class="hero">
+  <div class="shell hero-in">
+    <div class="kicker">Documento de traspaso · Handoff</div>
+    <h1><span class="t">TicketWati</span> — Traspaso Técnico</h1>
+    <p class="lede">Plataforma ITSM multi-inquilino (mesa de ayuda tipo ITIL) construida sobre React&nbsp;19 y Supabase. Este documento entrega al desarrollador entrante la arquitectura, las funcionalidades módulo a módulo, el estado real de cada pieza, los hallazgos de seguridad y una hoja de ruta priorizada.</p>
+    <div class="meta-row">
+      <span class="chip"><b>Stack</b> React 19 · TS 5.9 · Vite 7 · Supabase</span>
+      <span class="chip"><b>BD</b> PostgreSQL 17.6 · 53 tablas</span>
+      <span class="chip"><b>Región</b> aws us-west-2</span>
+      <span class="chip"><b>Fecha</b> 02 sep 2026</span>
+      <span class="chip"><b>Estado</b> Staging / pre-producción</span>
+    </div>
+    <div class="metrics">
+      <div class="metric"><div class="n">~27<small>k</small></div><div class="l">Líneas TS/TSX</div></div>
+      <div class="metric"><div class="n">14</div><div class="l">Módulos funcionales</div></div>
+      <div class="metric"><div class="n">53</div><div class="l">Tablas · 134 FKs · 112 RLS</div></div>
+      <div class="metric"><div class="n">5</div><div class="l">Edge Functions (Deno)</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="shell">
+<div class="grid">
+  <aside class="toc-wrap">
+    <nav class="toc" aria-label="Índice">
+      <div class="tt">Contenido</div>
+      <ol>
+        <li><a href="#resumen">Resumen ejecutivo</a></li>
+        <li><a href="#stack">Stack y tecnologías</a></li>
+        <li><a href="#arquitectura">Arquitectura</a></li>
+        <li><a href="#datos">Modelo de datos</a></li>
+        <li><a href="#modulos">Funcionalidades por módulo</a></li>
+        <li><a href="#estado">Completo vs. pendiente</a></li>
+        <li><a href="#seguridad">Seguridad</a></li>
+        <li><a href="#deuda">Deuda técnica</a></li>
+        <li><a href="#recomendaciones">Recomendaciones</a></li>
+        <li><a href="#arranque">Puesta en marcha</a></li>
+      </ol>
+    </nav>
+  </aside>
+
+  <main>
+    <!-- 1 · RESUMEN -->
+    <section id="resumen">
+      <div class="eyebrow"><span class="num">01</span> Resumen ejecutivo</div>
+      <h2 class="sec">Una plataforma ITSM completa en CRUD, con deuda concentrada en seguridad y pruebas</h2>
+      <p class="sec-lede">TicketWati cubre el ciclo ITIL de una mesa de ayuda: incidentes, problemas, cambios, catálogo de servicios, activos/CMDB, órdenes de trabajo, base de conocimiento, desarrollo ágil y gestión de ausencias — todo aislado por <code>tenant_id</code> con Row-Level Security. El frontend es una SPA React madura (rutas lazy, React Query, TipTap, Recharts) y el backend se apoya íntegramente en Supabase (PostgreSQL + Auth + Edge Functions Deno) más Amazon S3/SES para adjuntos y correo entrante.</p>
+      <div class="cards three">
+        <div class="card">
+          <h4><span class="pill p-ok">Sólido</span></h4>
+          <p>CRUD completo de los 14 módulos, motor de SLA con triggers, integración de email SES/SNS con validación de firma, adjuntos S3 vía presigned URLs, RBAC con 7 roles y permisos de menú.</p>
+        </div>
+        <div class="card">
+          <h4><span class="pill p-warn">A medias</span></h4>
+          <p>Búsqueda global (UI sin backend full-text), notificaciones en tiempo real (campana estática), aprobadores CAB persistidos en <code>localStorage</code>, migraciones vacías en el repo.</p>
+        </div>
+        <div class="card">
+          <h4><span class="pill p-crit">Riesgo</span></h4>
+          <p>Políticas RLS <code>USING(true)</code> que exponen datos entre inquilinos, credenciales en texto plano, sin pruebas automatizadas (0 tests), XSS almacenado sin sanitizar.</p>
+        </div>
+      </div>
+      <div class="note accent"><b>Lo primero para el nuevo dev:</b> antes de cualquier feature, atender los hallazgos P0 de la sección <a href="#seguridad">Seguridad</a> — hay una fuga de datos cross-tenant explotable con la clave pública y credenciales que deben rotarse. El resto del sistema es una base excelente sobre la que construir.</div>
+    </section>
+
+    <!-- 2 · STACK -->
+    <section id="stack">
+      <div class="eyebrow"><span class="num">02</span> Stack y tecnologías</div>
+      <h2 class="sec">Tecnologías empleadas</h2>
+      <p class="sec-lede">Todo el peso corre en el cliente y en Supabase; no hay servidor Node propio. Las dependencias están al día (React 19, Vite 7, Tailwind 4).</p>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Capa</th><th>Tecnología</th><th>Uso en el proyecto</th></tr></thead>
+          <tbody>
+            <tr><td><span class="mod">Framework UI</span></td><td class="mono">React 19.2 · TypeScript 5.9</td><td class="fn">SPA con componentes funcionales y hooks; tipado estricto contra el esquema de la BD (<code>src/types/database.ts</code>).</td></tr>
+            <tr><td><span class="mod">Build</span></td><td class="mono">Vite 7.2 · @vitejs/plugin-react</td><td class="fn">Dev server puerto 3000, alias <code>@ → src</code>, build <code>tsc -b &amp;&amp; vite build</code> (type-check limpio).</td></tr>
+            <tr><td><span class="mod">Estilos</span></td><td class="mono">Tailwind CSS 4.1 + typography</td><td class="fn">Utilidades + tokens CSS. Conviven con algunos estilos inline heredados (p.ej. <code>SettingsPage</code>).</td></tr>
+            <tr><td><span class="mod">Enrutado</span></td><td class="mono">react-router-dom 7.13</td><td class="fn">Rutas protegidas/públicas, todas las páginas cargadas con <code>React.lazy</code>.</td></tr>
+            <tr><td><span class="mod">Estado servidor</span></td><td class="mono">@tanstack/react-query 5.90</td><td class="fn">Caché de datos (staleTime 5 min, retry 1). Auth/tenant viven en Context.</td></tr>
+            <tr><td><span class="mod">Backend</span></td><td class="mono">Supabase JS 2.95</td><td class="fn">PostgreSQL 17.6, Auth (GoTrue), Edge Functions, acceso directo a tablas vía PostgREST.</td></tr>
+            <tr><td><span class="mod">Editor rico</span></td><td class="mono">TipTap 3.19</td><td class="fn">Descripciones y comentarios (imagen, enlaces, color, placeholder). Reemplazó al editor XSS anterior.</td></tr>
+            <tr><td><span class="mod">Gráficas</span></td><td class="mono">Recharts 3.7</td><td class="fn">Analytics: distribución de tiempos, SLA, KPIs.</td></tr>
+            <tr><td><span class="mod">Drag &amp; drop</span></td><td class="mono">@hello-pangea/dnd 18</td><td class="fn">Tableros Kanban de tickets y de desarrollo.</td></tr>
+            <tr><td><span class="mod">Cloud AWS</span></td><td class="mono">@aws-sdk/client-s3 · -ses 3.9</td><td class="fn">Adjuntos (S3, presigned URLs) y correo (SES: envío y recepción vía SNS).</td></tr>
+            <tr><td><span class="mod">Utilidades</span></td><td class="mono">date-fns 4 · lucide-react · Radix UI</td><td class="fn">Fechas, iconos y primitivas accesibles (switch, progress, label).</td></tr>
+            <tr><td><span class="mod">Edge runtime</span></td><td class="mono">Deno (Supabase Functions)</td><td class="fn">5 funciones TypeScript desplegadas en el edge de Supabase.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 3 · ARQUITECTURA -->
+    <section id="arquitectura">
+      <div class="eyebrow"><span class="num">03</span> Arquitectura</div>
+      <h2 class="sec">Cómo encajan las piezas</h2>
+      <p class="sec-lede">Arquitectura serverless: el navegador habla directo con PostgREST (Supabase) para el CRUD, y con Edge Functions solo cuando se necesitan credenciales de servidor (S3/SES) o lógica privilegiada.</p>
+
+      <h3 class="sub">Frontend</h3>
+      <ul class="body">
+        <li><b>Estructura</b> — <code>src/pages/</code> (una carpeta por módulo, ~20.5k líneas), <code>src/components/</code> (ui, layout, comunes — ~2.4k), <code>src/lib/api/</code> (capa de datos modularizada por dominio — ~2.2k), <code>src/contexts/</code> (Auth y Tenant).</li>
+        <li><b>Autenticación</b> — <code>AuthContext</code> gestiona sesión Supabase, perfil y tenant. <code>ProtectedRoute</code>/<code>PublicRoute</code> controlan acceso. <code>TenantContext</code> es hoy un wrapper delgado que deriva de Auth (refactor de auditoría).</li>
+        <li><b>Capa de datos</b> — objetos <code>*Api</code> (<code>ticketsApi</code>, <code>assetsApi</code>, <code>analyticsApi</code>…) encapsulan las consultas Supabase. Casi todas reciben <code>tenantId</code> y filtran por él en el cliente.</li>
+        <li><b>Rendimiento</b> — code-splitting por ruta con <code>lazy()</code>, caché de React Query, <code>ErrorBoundary</code> global.</li>
+      </ul>
+
+      <h3 class="sub">Backend (Supabase)</h3>
+      <ul class="body">
+        <li><b>PostgreSQL</b> — 53 tablas, 134 claves foráneas, 24 triggers y ~25 funciones (muchas <code>SECURITY DEFINER</code> para analítica: <code>get_mttr</code>, <code>get_fcr_rate</code>, <code>get_csat_score</code>, <code>get_dashboard_stats</code>, <code>get_sprint_velocity</code>…).</li>
+        <li><b>RLS</b> — Row-Level Security activo en las 53 tablas, con 112 políticas. El aislamiento se apoya en <code>get_my_tenant_id()</code> y comprobaciones de rol contra <code>profiles</code> (ver salvedades en Seguridad).</li>
+        <li><b>Auth</b> — Supabase GoTrue. 8 cuentas actuales. Roles: <code>admin, owner, manager, agent, technician, developer, customer</code>.</li>
+      </ul>
+
+      <h3 class="sub">Edge Functions (Deno)</h3>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Función</th><th>Propósito</th><th>Notas técnicas</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">get-s3-presigned-url</td><td class="fn">Genera URLs firmadas S3 (upload/download) server-side.</td><td class="fn">Verifica JWT, resuelve credenciales del tenant, previene path-traversal. Las claves AWS nunca llegan al navegador.</td></tr>
+            <tr><td class="mono">process-inbound-email</td><td class="fn">Convierte correos entrantes (SNS→S3) en tickets.</td><td class="fn">Valida firma SNS (X.509 SHA1-RSA), parsea MIME/RFC-2047, detecta auto-respuestas. Sin rate-limiting ni adjuntos aún.</td></tr>
+            <tr><td class="mono">send-email-reply</td><td class="fn">Responde tickets por correo (SES).</td><td class="fn"><code>SendRawEmailCommand</code> con headers <code>In-Reply-To</code>/<code>References</code> para el threading.</td></tr>
+            <tr><td class="mono">send-absence-notification</td><td class="fn">Notifica solicitudes/aprobaciones de ausencias.</td><td class="fn">Vía SES.</td></tr>
+            <tr><td class="mono">test-ses-connection</td><td class="fn">Diagnóstico de credenciales SES.</td><td class="fn">Consulta cuota de envío y envía correo de prueba opcional.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 class="sub">Servicios externos (AWS)</h3>
+      <ul class="body">
+        <li><b>S3</b> — almacenamiento de adjuntos bajo <code>attachments/{tickets,kb,general}/</code>; el cliente solo maneja presigned URLs temporales.</li>
+        <li><b>SES + SNS</b> — recepción de correo → SNS → S3 → Edge Function → ticket, y envío de respuestas. <b>Bloqueo operativo conocido:</b> los registros MX del dominio apuntan a Microsoft 365, no a SES (ver <code>docs/SES/daticos.md</code>) — hace falta reenvío o subdominio dedicado para que SES reciba.</li>
+      </ul>
+    </section>
+
+    <!-- 4 · DATOS -->
+    <section id="datos">
+      <div class="eyebrow"><span class="num">04</span> Modelo de datos</div>
+      <h2 class="sec">53 tablas agrupadas por dominio</h2>
+      <p class="sec-lede">Toda tabla lleva <code>tenant_id</code> y su política RLS. Estos son los grupos principales; el esquema completo está en el backup (<code>ticketwati_schema.sql</code>).</p>
+      <div class="cards two">
+        <div class="card"><h4><span class="ico">T</span>Núcleo de tickets</h4><p class="mono" style="font-size:.8rem;color:var(--ink-3)">tenants · profiles · tickets · ticket_comments · ticket_assignees · ticket_attachments · categories · sla_policies · priority_sla_config · csat_surveys</p></div>
+        <div class="card"><h4><span class="ico">I</span>ITSM (ITIL)</h4><p class="mono" style="font-size:.8rem;color:var(--ink-3)">problems · changes · change_requests · service_catalog_items · kb_articles · audit_logs</p></div>
+        <div class="card"><h4><span class="ico">A</span>Activos / CMDB</h4><p class="mono" style="font-size:.8rem;color:var(--ink-3)">assets · asset_groups · asset_types · asset_history · asset_relationships · asset_licenses · software_licenses · inventory_items · stock_levels · stock_locations · iot_devices · iot_alerts</p></div>
+        <div class="card"><h4><span class="ico">W</span>Operaciones</h4><p class="mono" style="font-size:.8rem;color:var(--ink-3)">work_orders · work_order_comments · work_order_parts · maintenance_plans · maintenance_activities · activity_assignees · technician_schedules · locations</p></div>
+        <div class="card"><h4><span class="ico">D</span>Desarrollo ágil</h4><p class="mono" style="font-size:.8rem;color:var(--ink-3)">projects · sprints · user_stories · time_entries · commits · deployments · kpi_snapshots</p></div>
+        <div class="card"><h4><span class="ico">O</span>Organización</h4><p class="mono" style="font-size:.8rem;color:var(--ink-3)">teams · team_members · menu_permissions · tenant_settings · absences · absence_reasons · absence_approvals · email_processing_log · email_bounces</p></div>
+      </div>
+      <div class="note"><b>Volumen actual (datos reales respaldados):</b> 44 tickets · 33 comentarios · 10 activos · 9 equipos · 13 historias de usuario · 34 actividades de mantenimiento · 65 permisos de menú · 7 perfiles · 1 tenant · 8 cuentas de login. Total ≈ 451 filas.</div>
+    </section>
+
+    <!-- 5 · MODULOS -->
+    <section id="modulos">
+      <div class="eyebrow"><span class="num">05</span> Funcionalidades por módulo</div>
+      <h2 class="sec">Qué hace cada módulo y en qué estado está</h2>
+      <div class="legend">
+        <span class="pill p-ok">Completo</span>
+        <span class="pill p-warn">Parcial</span>
+        <span class="pill p-info">Base / mínimo</span>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Módulo</th><th>Función</th><th>Detalle técnico</th><th>Estado</th></tr></thead>
+          <tbody>
+            <tr><td><span class="mod">Dashboard</span></td><td class="fn">Vista de inicio con KPIs y accesos.</td><td class="fn">Consume <code>get_dashboard_stats()</code>. Fallos silenciosos con <code>.catch(()=&gt;[])</code> pendientes de pulir.</td><td><span class="pill p-ok">Completo</span></td></tr>
+            <tr><td><span class="mod">Tickets</span></td><td class="fn">Gestión de incidentes/solicitudes: lista, Kanban, detalle, fusión, plantillas de respuesta, adjuntos, comentarios, SLA.</td><td class="fn">Módulo más grande (<code>TicketDetail</code> 1.348 líneas). SLA calculado por triggers y <code>calculate_sla_due_at()</code>. Respuesta por email vía Edge Function.</td><td><span class="pill p-ok">Completo</span></td></tr>
+            <tr><td><span class="mod">Problemas</span></td><td class="fn">Gestión de problemas (causa raíz, errores conocidos).</td><td class="fn">CRUD + estados <code>analyzing→root_cause→resolved</code>. Relación con tickets.</td><td><span class="pill p-ok">Completo</span></td></tr>
+            <tr><td><span class="mod">Cambios</span></td><td class="fn">RFC + flujo de aprobación CAB + calendario de cambios.</td><td class="fn">CRUD y estados OK. <b>Los aprobadores CAB se guardan en <code>localStorage</code>, no en la BD</b> (TODO explícito en <code>ChangeDetail.tsx</code>).</td><td><span class="pill p-warn">Parcial</span></td></tr>
+            <tr><td><span class="mod">Catálogo de Servicios</span></td><td class="fn">Ítems solicitables (hardware, software, acceso, servicio) + formulario de solicitud.</td><td class="fn">Incluye formulario de solicitud de ausencia como ítem del catálogo.</td><td><span class="pill p-ok">Completo</span></td></tr>
+            <tr><td><span class="mod">Activos / CMDB</span></td><td class="fn">Inventario, detalle, specs técnicas, historial, grupos de activos.</td><td class="fn">Rico (<code>AssetDetail</code> 903 líneas, <code>TechnicalSpecs</code> 735). Herramienta Python de recolección de hardware en <code>tools/</code>. Relaciones CMDB con tabla dedicada pero UI limitada.</td><td><span class="pill p-warn">Parcial</span></td></tr>
+            <tr><td><span class="mod">Órdenes de Trabajo</span></td><td class="fn">Mantenimiento correctivo: lista, detalle, piezas, comentarios.</td><td class="fn">CRUD completo. Historial detallado (<code>getHistory</code>) señalado como mejorable.</td><td><span class="pill p-ok">Completo</span></td></tr>
+            <tr><td><span class="mod">Desarrollo</span></td><td class="fn">Gestión ágil: tablero Kanban, historias de usuario, sprints.</td><td class="fn"><code>KanbanBoard</code> con drag&amp;drop (602 líneas). Tablas <code>commits</code>/<code>deployments</code> existen pero con integración VCS mínima.</td><td><span class="pill p-warn">Parcial</span></td></tr>
+            <tr><td><span class="mod">Analytics</span></td><td class="fn">Métricas ITSM: MTTR, FCR, CSAT, SLA, distribución de respuesta, por departamento.</td><td class="fn">Recharts + RPCs <code>SECURITY DEFINER</code>. Corregida race-condition de carga de equipos.</td><td><span class="pill p-ok">Completo</span></td></tr>
+            <tr><td><span class="mod">Planificador</span></td><td class="fn">Mantenimiento preventivo: planes recurrentes → actividades.</td><td class="fn"><code>planner.ts</code> genera fechas (daily/weekly/monthly/yearly/custom). Asignación múltiple.</td><td><span class="pill p-ok">Completo</span></td></tr>
+            <tr><td><span class="mod">Base de Conocimiento</span></td><td class="fn">Artículos con editor rico y búsqueda.</td><td class="fn">Trigger de búsqueda full-text (<code>kb_article_search_trigger</code>) a nivel BD. Render con <code>dangerouslySetInnerHTML</code> (ver Seguridad).</td><td><span class="pill p-ok">Completo</span></td></tr>
+            <tr><td><span class="mod">Ausencias</span></td><td class="fn">Solicitud, aprobación y dashboard de ausencias del personal.</td><td class="fn">Flujo <code>absences → absence_approvals</code> con notificación por correo. RLS por rol.</td><td><span class="pill p-ok">Completo</span></td></tr>
+            <tr><td><span class="mod">Usuarios</span></td><td class="fn">Gestión de personas del tenant.</td><td class="fn">Alta crea cuenta Auth + perfil; auto-confirma email vía RPC <code>confirm_user_email</code>.</td><td><span class="pill p-ok">Completo</span></td></tr>
+            <tr><td><span class="mod">Integración Email</span></td><td class="fn">Configuración SES entrante/saliente por tenant.</td><td class="fn">Backend robusto (firma SNS validada). Bloqueado por MX del dominio (infra, no código).</td><td><span class="pill p-warn">Parcial</span></td></tr>
+            <tr><td><span class="mod">Configuración</span></td><td class="fn">18 pestañas: perfil, organización, sedes, departamentos, horario laboral, listas/tipos, SLA, categorías, tags, equipo, marca, seguridad, notificaciones, integraciones, almacenamiento S3, permisos de menú.</td><td class="fn">Muy amplio. Permisos de menú por rol guardados en <code>menu_permissions</code> y aplicados en el Sidebar.</td><td><span class="pill p-ok">Completo</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 6 · ESTADO -->
+    <section id="estado">
+      <div class="eyebrow"><span class="num">06</span> Completo vs. pendiente</div>
+      <h2 class="sec">Lo que está listo y lo que falta</h2>
+      <div class="cards two">
+        <div class="card" style="border-left:3px solid var(--ok)">
+          <h4 style="color:var(--ok)">Implementado y funcionando</h4>
+          <ul class="body" style="margin-top:.4rem">
+            <li>CRUD completo de los 14 módulos con relaciones y filtros por tenant.</li>
+            <li>Motor de SLA: cálculo por prioridad, triggers de timestamps, indicadores de riesgo en UI.</li>
+            <li>Integración de correo entrante con <b>validación criptográfica de firma SNS</b> y parseo MIME.</li>
+            <li>Adjuntos en S3 con credenciales 100% del lado servidor (presigned URLs).</li>
+            <li>RBAC con 7 roles + permisos de menú configurables por rol.</li>
+            <li>Analítica ITSM (MTTR, FCR, CSAT, velocidad de sprint) vía funciones de BD.</li>
+            <li>Editor de texto enriquecido (TipTap), lazy-loading por ruta, Error Boundary global.</li>
+            <li>Build con type-check limpio (<code>tsc -b</code> pasa sin errores).</li>
+          </ul>
+        </div>
+        <div class="card" style="border-left:3px solid var(--warn)">
+          <h4 style="color:var(--warn)">Pendiente o incompleto</h4>
+          <ul class="body" style="margin-top:.4rem">
+            <li><b>Búsqueda global (<kbd>Ctrl</kbd>+<kbd>K</kbd>):</b> la UI existe en la barra superior, falta el backend full-text multi-entidad.</li>
+            <li><b>Notificaciones en tiempo real:</b> la campana es estática; no hay canal Supabase Realtime conectado.</li>
+            <li><b>Aprobadores CAB:</b> persistidos en <code>localStorage</code> en vez de una columna JSONB en <code>changes</code>.</li>
+            <li><b>Motor de workflows:</b> el sistema es CRUD puro; no hay reglas ni estados condicionales automatizados.</li>
+            <li><b>Adjuntos de correo entrante:</b> el parser no sube adjuntos a Storage todavía.</li>
+            <li><b>Pruebas automatizadas:</b> <b>0 tests</b> en todo el repositorio.</li>
+            <li><b>Migraciones:</b> los archivos aplicados en <code>supabase/migrations/</code> están <b>vacíos (0 bytes)</b> — el esquema no se puede reconstruir desde el repo.</li>
+            <li><b>Grupos de activos:</b> alguna acción marcada como “Próximamente” (botón deshabilitado).</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7 · SEGURIDAD -->
+    <section id="seguridad">
+      <div class="eyebrow"><span class="num">07</span> Seguridad</div>
+      <h2 class="sec">Hallazgos de seguridad</h2>
+      <p class="sec-lede">Verificados directamente contra la base de datos en producción y el código. Las auditorías internas (<code>docs/audits/</code>) califican la seguridad en 9.5/10, pero <b>esa cifra no se sostiene</b>: existe una fuga de datos entre inquilinos activa. Orden por severidad.</p>
+
+      <div class="finding crit">
+        <div class="fhead"><span class="fid">SEC-01</span><h4>Fuga de datos cross-tenant vía políticas RLS <code>USING(true)</code></h4><span class="sev c">Crítico</span></div>
+        <p>Las tablas <code>tickets</code>, <code>profiles</code>, <code>assets</code>, <code>work_orders</code>, <code>tenants</code> y <code>locations</code> tienen políticas <span class="mono">SELECT</span> permisivas <code>allow_public_read_*</code> con <code>USING(true)</code> para el rol <code>public</code>. En PostgreSQL las políticas permisivas se combinan con <b>OR</b>: aunque existan políticas correctas por tenant, esta las anula y concede lectura a <b>cualquiera con la clave anónima</b> —que viaja pública en el bundle JS— sobre los datos de <b>todos los inquilinos</b>. Se filtran nombres, emails, roles, asuntos de tickets y activos de toda organización que use la plataforma.</p>
+        <div class="fix"><b>Corrección</b>Eliminar las políticas <code>allow_public_read_*</code> y reemplazarlas por <code>USING (tenant_id = get_my_tenant_id())</code>, revocando <code>SELECT</code> al rol <code>anon</code> donde no aplique. Auditar las 21 políticas con <code>true</code> detectadas.</div>
+      </div>
+
+      <div class="finding high">
+        <div class="fhead"><span class="fid">SEC-02</span><h4>Credenciales en texto plano dentro del proyecto</h4><span class="sev h">Alto</span></div>
+        <p><code>datos.md</code> (sí está en <code>.gitignore</code>) contiene la <code>service_role</code> key de Supabase, claves de acceso S3 y SES, la contraseña de la BD y contraseñas de usuarios en claro. Además <code>.env</code> <b>no está en <code>.gitignore</code></b> y <code>docs/SES/</code> repite secretos. La <code>service_role</code> key salta RLS por completo.</p>
+        <div class="fix"><b>Corrección</b>Rotar <b>todas</b> las credenciales expuestas (BD, service_role, anon, S3, SES, contraseñas de usuario). Añadir <code>.env</code> y <code>docs/SES/</code> a <code>.gitignore</code>. Mover secretos a un gestor (Supabase Vault / variables de entorno del proyecto).</div>
+      </div>
+
+      <div class="finding high">
+        <div class="fhead"><span class="fid">SEC-03</span><h4>Secretos S3/SES almacenados en claro en <code>tenant_settings</code></h4><span class="sev h">Alto</span></div>
+        <p>Las columnas <code>s3_secret_key</code> y <code>ses_secret_access_key</code> guardan las claves AWS sin cifrar. Cualquier admin del tenant (o quien explote SEC-01) puede leerlas. La función <code>get_ses_credentials()</code> es <code>SECURITY DEFINER</code> y las devuelve a las Edge Functions.</p>
+        <div class="fix"><b>Corrección</b>Cifrar con Supabase Vault (<code>pgsodium</code>) o mover las credenciales a secretos de Edge Function por tenant, no a columnas legibles.</div>
+      </div>
+
+      <div class="finding med">
+        <div class="fhead"><span class="fid">SEC-04</span><h4>XSS almacenado: HTML sin sanitizar</h4><span class="sev m">Medio</span></div>
+        <p>Se renderiza contenido de la BD con <code>dangerouslySetInnerHTML</code> en 6 vistas (<code>ticket.description</code>, <code>comment.content</code>, <code>article.content</code>…) <b>sin DOMPurify</b>. Aunque el editor es TipTap, el contenido puede inyectarse por la API (varias políticas de <span class="mono">INSERT</span> aceptan <code>WITH CHECK (true)</code>), volviéndolo explotable.</p>
+        <div class="fix"><b>Corrección</b>Sanitizar con DOMPurify antes de inyectar HTML, con una allowlist de etiquetas/atributos coherente con TipTap.</div>
+      </div>
+
+      <div class="finding med">
+        <div class="fhead"><span class="fid">SEC-05</span><h4>Auto-registro crea inquilinos sin control</h4><span class="sev m">Medio</span></div>
+        <p><code>tenants_insert_authenticated</code> tiene <code>WITH CHECK (true)</code>: cualquier usuario autenticado puede crear organizaciones y perfiles. El flujo <code>signUp</code> lo permite. Facilita abuso y contaminación de datos.</p>
+        <div class="fix"><b>Corrección</b>Restringir la creación de tenants a un flujo de invitación/aprovisionamiento controlado; endurecer el <code>WITH CHECK</code>.</div>
+      </div>
+
+      <div class="finding low">
+        <div class="fhead"><span class="fid">SEC-06</span><h4>Edge Functions sin rate-limiting ni anti-spam robusto</h4><span class="sev l">Bajo</span></div>
+        <p><code>process-inbound-email</code> documenta como TODO el rate-limiting por tenant y una detección de spam/bucles más sofisticada. Riesgo de abuso/DoS por correo.</p>
+        <div class="fix"><b>Corrección</b>Añadir límite de tasa por tenant y refuerzo anti-loop antes de exponer SES a producción real.</div>
+      </div>
+
+      <div class="note"><b>Nota positiva:</b> el diseño base es correcto —RLS activo en las 53 tablas, credenciales AWS fuera del navegador, firma SNS validada criptográficamente y funciones analíticas con <code>SECURITY DEFINER</code> acotadas. Los hallazgos son configuraciones a corregir, no un rediseño.</div>
+    </section>
+
+    <!-- 8 · DEUDA -->
+    <section id="deuda">
+      <div class="eyebrow"><span class="num">08</span> Deuda técnica</div>
+      <h2 class="sec">Calidad de código</h2>
+      <div class="cards two">
+        <div class="card"><h4>Métricas</h4>
+          <ul class="body" style="margin-top:.3rem">
+            <li><b>0</b> pruebas automatizadas (sin Vitest/Playwright).</li>
+            <li><b>~102</b> usos de <code>any</code> — tipado que se relaja en puntos calientes.</li>
+            <li><b>~134</b> <code>console.*</code> restantes (la mayoría tras <code>import.meta.env.DEV</code>).</li>
+            <li>Componentes muy grandes: <code>TicketDetail</code> 1.348, <code>AssetDetail</code> 903, <code>TechnicalSpecs</code> 735 líneas.</li>
+          </ul>
+        </div>
+        <div class="card"><h4>Riesgos estructurales</h4>
+          <ul class="body" style="margin-top:.3rem">
+            <li><b>Migraciones vacías</b>: la carpeta <code>migrations/</code> tiene archivos de 0 bytes; el esquema real solo vive en la nube. Riesgo alto de <i>drift</i>.</li>
+            <li>Migraciones duplicadas en <code>migrations_backup/</code> (p.ej. dos <code>017_*</code>).</li>
+            <li>Estilos inline mezclados con Tailwind (<code>SettingsPage</code>).</li>
+            <li>Listas sin paginación: <code>ticketsApi.getAll</code> trae todos los tickets del tenant de una vez.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9 · RECOMENDACIONES -->
+    <section id="recomendaciones">
+      <div class="eyebrow"><span class="num">09</span> Recomendaciones</div>
+      <h2 class="sec">Hoja de ruta priorizada</h2>
+      <p class="sec-lede">Ordenada por prioridad. P0 = antes de exponer a usuarios reales; P3 = mejora incremental.</p>
+      <div class="roadmap">
+        <div class="rm p0"><span class="tag">P0</span><div><h4>Cerrar la fuga cross-tenant y rotar credenciales</h4><p>Reescribir las políticas RLS <code>USING(true)</code> (SEC-01), rotar todos los secretos (SEC-02), y añadir <code>.env</code> a <code>.gitignore</code>. Sanitizar HTML con DOMPurify (SEC-04).</p></div></div>
+        <div class="rm p1"><span class="tag">P1</span><div><h4>Proteger secretos y aprovisionamiento</h4><p>Cifrar claves S3/SES con Vault (SEC-03), restringir la creación de tenants (SEC-05) y añadir rate-limiting a las Edge Functions (SEC-06).</p></div></div>
+        <div class="rm p1"><span class="tag">P1</span><div><h4>Reconstruir las migraciones</h4><p>Generar migraciones reales desde el esquema actual (<code>supabase db diff</code>) para que la BD sea reproducible y versionada. Consolidar los duplicados de <code>migrations_backup/</code>.</p></div></div>
+        <div class="rm p2"><span class="tag">P2</span><div><h4>Introducir pruebas</h4><p>Vitest para la capa <code>src/lib/api/</code> y utilidades; Playwright para los flujos críticos (crear ticket, aprobar cambio, subir adjunto). Empezar por el motor de SLA.</p></div></div>
+        <div class="rm p2"><span class="tag">P2</span><div><h4>Optimización de rendimiento</h4><p>Paginar/virtualizar listas grandes (tickets, activos), asegurar índices en <code>tenant_id</code>, FKs y <code>status</code>, y dividir los componentes de +800 líneas en sub-componentes.</p></div></div>
+        <div class="rm p2"><span class="tag">P2</span><div><h4>Persistir lo que hoy vive en el cliente</h4><p>Mover los aprobadores CAB de <code>localStorage</code> a una columna JSONB en <code>changes</code>; habilitar los adjuntos de correo entrante hacia Storage.</p></div></div>
+        <div class="rm p3"><span class="tag">P3</span><div><h4>Notificaciones y búsqueda en vivo</h4><p>Conectar Supabase Realtime a la campana de notificaciones; implementar búsqueda full-text multi-entidad reutilizando el trigger ya existente en <code>kb_articles</code>.</p></div></div>
+        <div class="rm p3"><span class="tag">P3</span><div><h4>Motor de workflows</h4><p>Reglas y estados condicionales (escalado automático, matriz impacto×urgencia) para pasar de CRUD a automatización ITIL — es el gran salto de valor del <code>plan-futuro.md</code>.</p></div></div>
+      </div>
+    </section>
+
+    <!-- 10 · ARRANQUE -->
+    <section id="arranque">
+      <div class="eyebrow"><span class="num">10</span> Puesta en marcha</div>
+      <h2 class="sec">Arrancar el proyecto</h2>
+      <h3 class="sub">Variables de entorno (<code>.env</code>)</h3>
+      <pre><span class="c"># Frontend (Vite) — expuestas al navegador</span>
+VITE_SUPABASE_URL=https://&lt;project-ref&gt;.supabase.co
+VITE_SUPABASE_ANON_KEY=&lt;anon-key&gt;
+<span class="c"># CLI / despliegue de funciones</span>
+SUPABASE_ACCESS_TOKEN=&lt;access-token&gt;</pre>
+      <h3 class="sub">Comandos</h3>
+      <pre><span class="k">npm install</span>
+<span class="k">npm run dev</span>        <span class="c"># Vite dev server → http://localhost:3000</span>
+<span class="k">npm run build</span>      <span class="c"># tsc -b && vite build</span>
+<span class="k">npm run lint</span>       <span class="c"># ESLint</span>
+<span class="k">npm run db:types</span>   <span class="c"># regenerar src/types/database.ts desde el esquema</span>
+supabase functions deploy   <span class="c"># desplegar las 5 Edge Functions</span></pre>
+      <h3 class="sub">Restaurar el backup en Postgres local</h3>
+      <p>El respaldo completo se entrega en la carpeta <code>backup/</code>. Restauración de un comando (Git Bash):</p>
+      <pre>cd backup
+PGPASSWORD=1004 ./restaurar_local.sh ticketwati</pre>
+      <p>Incluye <code>ticketwati_full.sql</code> (esquema+datos), <code>ticketwati_full.dump</code> (formato custom), variantes solo-esquema / solo-datos, <code>auth_users_data.sql</code> (8 cuentas) y <code>00_prep_roles.sql</code> (roles Supabase para restauración limpia). Verificado: <b>53 tablas, 134 FKs, 71 funciones, 112 políticas, 24 triggers, 451 filas</b>.</p>
+      <div class="note accent"><b>Bloqueo de infraestructura a resolver aparte del código:</b> los registros MX del dominio del colegio apuntan a Microsoft 365. Mientras SES no reciba el correo (reenvío o subdominio dedicado <code>tickets.dominio.edu</code>), la creación de tickets por email no se activará aunque el código esté correcto.</div>
+    </section>
+
+    <div class="foot">
+      <p class="mono">TicketWati · Informe de traspaso técnico · 02 sep 2026</p>
+      <p>Basado en inspección directa del código (~27k líneas), las Edge Functions, el esquema en producción (PostgreSQL 17.6) y la documentación interna del repositorio (<code>docs/audits/</code>, <code>docs/plans/</code>). Los valores de credenciales concretos se omiten deliberadamente de este documento; deben rotarse todos.</p>
+    </div>
+  </main>
+</div>
+</div>

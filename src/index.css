@@ -1,0 +1,179 @@
+@import url('https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap');
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  /* Colors - Primary (Violet) */
+  --color-primary-50: #eef2ff;
+  --color-primary-100: #e0e7ff;
+  --color-primary-200: #c7d2fe;
+  --color-primary-300: #a5b4fc;
+  --color-primary-400: #818cf8;
+  --color-primary-500: #696CFF;
+  --color-primary-600: #5f61e6;
+  --color-primary-700: #4338ca;
+  --color-primary-800: #3730a3;
+  --color-primary-900: #312e81;
+
+  /* Colors - Secondary (Gray/Blue) */
+  --color-secondary: #8592A3;
+
+  /* Colors - Semantic */
+  --color-success: #71DD37;
+  --color-success-bg: #dbfde5;
+  --color-warning: #FFAB00;
+  --color-warning-bg: #fff2d6;
+  --color-error: #FF3E1D;
+  --color-error-bg: #ffe0db;
+  --color-info: #03C3EC;
+  --color-info-bg: #cff3fc;
+
+  /* Colors - Slate (Neutral) */
+  --color-slate-50: #fbfbfd;
+  --color-slate-100: #f5f5f9;
+  --color-slate-200: #eceef1;
+  --color-slate-300: #dfe3e7;
+  --color-slate-400: #c9ced4;
+  --color-slate-500: #a1acb8;
+  --color-slate-600: #697a8d;
+  --color-slate-700: #566a7f;
+  --color-slate-800: #384551;
+  --color-slate-900: #232d3f;
+
+  /* Border Radius Override */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.625rem;
+  /* 10px */
+  --radius-2xl: 1rem;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(67, 89, 113, 0.04);
+  --shadow-sm: 0 2px 6px 0 rgba(67, 89, 113, 0.12);
+  --shadow-md: 0 4px 16px 0 rgba(105, 108, 255, 0.16);
+  --shadow-lg: 0 8px 16px 0 rgba(67, 89, 113, 0.16);
+  --shadow-xl: 0 16px 20px 0 rgba(67, 89, 113, 0.14);
+}
+
+/* Custom Utilities using the mapped vars */
+:root {
+  --body-bg: #F5F5F9;
+  --card-bg: #ffffff;
+}
+
+body {
+  font-family: 'Public Sans', sans-serif;
+  background-color: var(--body-bg);
+  color: var(--color-slate-600);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Re-defining component classes to ensure they use correct values even if utilities fail */
+.card {
+  @apply bg-white rounded-xl shadow-sm border-0 transition-all duration-200;
+}
+
+.card:hover {
+  @apply shadow-md;
+}
+
+.btn {
+  @apply inline-flex items-center justify-center gap-2 px-5 py-2 rounded-md font-medium transition-all duration-200 uppercase tracking-wide text-sm cursor-pointer border border-transparent;
+}
+
+.btn-primary {
+  @apply bg-primary-500 text-white shadow-md shadow-primary-500/40 hover:bg-primary-600 hover:shadow-lg hover:shadow-primary-500/50 hover:-translate-y-0.5 active:translate-y-0;
+}
+
+.badge {
+  @apply inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold uppercase leading-none;
+}
+
+.badge-primary {
+  @apply bg-primary-100 text-primary-500;
+}
+
+.badge-success {
+  @apply bg-[var(--color-success-bg)] text-success;
+}
+
+.badge-warning {
+  @apply bg-[var(--color-warning-bg)] text-warning;
+}
+
+.badge-error {
+  @apply bg-[var(--color-error-bg)] text-error;
+}
+
+.badge-info {
+  @apply bg-[var(--color-info-bg)] text-info;
+}
+
+.badge-neutral {
+  @apply bg-slate-200 text-slate-600;
+}
+
+/* RECHARTS FIX helper */
+.recharts-responsive-container {
+  min-width: 0;
+}
+
+/* Form Elements */
+.input {
+  @apply block w-full px-3.5 py-2.5 text-[0.9375rem] font-normal leading-[1.53] text-slate-600 bg-white bg-clip-padding border border-slate-300 rounded-lg appearance-none transition-all duration-200;
+}
+
+.input:focus {
+  @apply border-primary-500 outline-none ring-2 ring-primary-500/20;
+  box-shadow: 0 0 0.25rem 0.05rem rgba(105, 108, 255, 0.1);
+}
+
+.input::placeholder {
+  @apply text-slate-400;
+}
+
+/* Additional Button Styles */
+.btn-secondary {
+  @apply bg-[#8592A3] text-white shadow-md shadow-[#8592A3]/40 hover:bg-[#788393] hover:shadow-lg hover:shadow-[#8592A3]/50 hover:-translate-y-0.5 active:translate-y-0;
+}
+
+.btn-outline {
+  @apply bg-transparent border border-primary-500 text-primary-500 hover:bg-primary-50;
+}
+
+/* Prosemirror Overrides */
+.ProseMirror ul {
+  list-style-type: disc;
+  padding-left: 1.5em;
+}
+
+.ProseMirror ol {
+  list-style-type: decimal;
+  padding-left: 1.5em;
+}
+
+.ProseMirror blockquote {
+  border-left: 3px solid #cbd5e1;
+  padding-left: 1rem;
+}
+
+.ProseMirror pre {
+  background: #0d0d0d;
+  color: #fff;
+  font-family: 'JetBrainsMono', monospace;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+}
+
+.ProseMirror code {
+  color: #616161;
+  background-color: transparent;
+  padding: 0;
+}
+
+.ProseMirror a {
+  color: #696CFF;
+  text-decoration: underline;
+  cursor: pointer;
+}

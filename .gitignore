@@ -1,0 +1,65 @@
+# ── Dependencias ────────────────────────────────────────────
+node_modules/
+server/node_modules/
+
+# ── Compilados ──────────────────────────────────────────────
+dist/
+dist-ssr/
+server/dist/
+*.tsbuildinfo
+
+# ── Secretos ────────────────────────────────────────────────
+# Nunca subir: contienen contraseñas, claves de firma y de integración.
+.env
+.env.*
+!.env.example
+server/.env
+server/.env.*
+!server/.env.example
+
+# Configuración del agente de inventario: lleva la clave de integración.
+tools/analisishardware/agente.ini
+
+# ── Datos ───────────────────────────────────────────────────
+# Respaldos de la base: contienen información real y hashes de contraseñas.
+backup/
+*.sql.gz
+*.dump
+
+# Adjuntos subidos por los usuarios.
+server/storage/
+
+# Informes generados por el agente en cada equipo.
+tools/analisishardware/informe_inventario.json
+tools/analisishardware/*.log
+
+# ── Registros y temporales ──────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+tmp/
+*.local
+
+# Configuración local de herramientas: puede contener tokens personales.
+.claude/
+
+# ── Editores y sistema ──────────────────────────────────────
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ── Python ──────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+.venv/
+venv/

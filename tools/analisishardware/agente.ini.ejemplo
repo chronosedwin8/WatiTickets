@@ -1,0 +1,13 @@
+; Configuración del agente de inventario de TicketWati.
+; Copia este archivo como "agente.ini" y completa los valores.
+; Nunca subas el archivo agente.ini a un repositorio: contiene una clave.
+
+[ticketwati]
+; Dirección donde responde la API (sin barra final)
+url = http://192.168.1.10:4000
+
+; Clave de integración que entrega el administrador
+clave = pega-aqui-la-clave-del-agente
+
+; Segundos de espera antes de darse por vencido
+timeout = 30

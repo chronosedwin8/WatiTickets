@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta name="theme-color" content="#4f46e5" />
+
+  <title>TicketWati · Mesa de ayuda e inventario tecnológico</title>
+  <meta name="description"
+    content="Plataforma de mesa de ayuda e inventario de activos para organizaciones. Gestiona tickets por departamento, controla tu parque informático de forma automática y mide el servicio con indicadores." />
+  <meta name="author" content="TicketWati" />
+  <meta name="robots" content="index, follow" />
+
+  <!-- Al compartir el enlace -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="TicketWati" />
+  <meta property="og:locale" content="es_ES" />
+  <meta property="og:title" content="TicketWati · Mesa de ayuda e inventario tecnológico" />
+  <meta property="og:description"
+    content="Reúne las solicitudes de todos los departamentos, mantén el inventario de equipos al día sin trabajo manual y mide cuánto tarda tu servicio en responder." />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="TicketWati · Mesa de ayuda e inventario tecnológico" />
+  <meta name="twitter:description"
+    content="Mesa de ayuda, inventario automático de equipos, mantenimiento preventivo e indicadores de servicio." />
+
+  <!-- Evita un parpadeo sin estilo mientras carga la aplicación -->
+  <style>
+    html { background: #ffffff; }
+    #root:empty::after {
+      content: '';
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: 2rem;
+      height: 2rem;
+      margin: -1rem 0 0 -1rem;
+      border: 3px solid #e2e8f0;
+      border-top-color: #4f46e5;
+      border-radius: 50%;
+      animation: girar .7s linear infinite;
+    }
+    @keyframes girar { to { transform: rotate(360deg); } }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+  <noscript>
+    <div style="max-width:40rem;margin:4rem auto;padding:0 1.5rem;font-family:system-ui,sans-serif;color:#1e293b">
+      <h1 style="font-size:1.5rem">TicketWati</h1>
+      <p>Esta aplicación necesita JavaScript para funcionar. Actívalo en tu navegador y vuelve a cargar la página.</p>
+    </div>
+  </noscript>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
+</html>

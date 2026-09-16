@@ -1,0 +1,26 @@
+# Indexación de TicketWati
+User-agent: *
+Allow: /$
+Allow: /inicio
+Allow: /ayuda
+
+# Las pantallas internas requieren sesión: no tiene sentido rastrearlas
+Disallow: /tickets
+Disallow: /problems
+Disallow: /changes
+Disallow: /assets
+Disallow: /work-orders
+Disallow: /service-catalog
+Disallow: /development
+Disallow: /analytics
+Disallow: /planner
+Disallow: /users
+Disallow: /knowledge-base
+Disallow: /absences
+Disallow: /settings
+Disallow: /login
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /api/
+
+Sitemap: https://ejemplo.com/sitemap.xml
