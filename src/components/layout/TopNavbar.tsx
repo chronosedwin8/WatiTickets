@@ -2,6 +2,7 @@ import { Menu } from 'lucide-react'
 import { UserMenu } from './UserMenu'
 import { BuscadorGlobal } from './BuscadorGlobal'
 import { Notificaciones } from './Notificaciones'
+import { BotonTema } from './BotonTema'
 
 interface TopNavbarProps {
     onMenuClick: () => void
@@ -9,22 +10,24 @@ interface TopNavbarProps {
 
 export function TopNavbar({ onMenuClick }: TopNavbarProps) {
     return (
-        <div className="z-40 shrink-0 px-6 pb-4 pt-4 print:hidden">
-            <header className="flex h-[62px] items-center justify-between rounded-xl bg-white/95 px-4 shadow-sm backdrop-blur-sm transition-all duration-300 sm:px-6">
-                <div className="flex flex-1 items-center gap-4">
+        <div className="sticky top-0 z-40 shrink-0 px-5 pb-3 pt-4 sm:px-8 print:hidden">
+            <header className="cristal flex h-[58px] items-center justify-between rounded-2xl px-3 shadow-sm sm:px-4">
+                <div className="flex min-w-0 flex-1 items-center gap-3">
                     <button
                         onClick={onMenuClick}
                         aria-label="Abrir menú"
-                        className="-ml-2 p-1 text-slate-500 hover:text-slate-700 lg:hidden"
+                        className="rounded-lg p-1.5 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800 lg:hidden"
                     >
-                        <Menu size={24} />
+                        <Menu size={22} />
                     </button>
 
                     <BuscadorGlobal />
                 </div>
 
-                <div className="flex items-center gap-3 sm:gap-4">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                    <BotonTema />
                     <Notificaciones />
+                    <div className="mx-1 h-6 w-px bg-[var(--borde)]" />
                     <UserMenu />
                 </div>
             </header>

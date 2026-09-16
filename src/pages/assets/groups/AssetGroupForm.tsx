@@ -106,14 +106,14 @@ export function AssetGroupForm() {
                             Descripción
                         </label>
                         <textarea
-                            className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm rounded-lg p-2.5 min-h-[100px] focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
+                            className="w-full bg-white border border-slate-200 text-slate-900 text-sm rounded-lg p-2.5 min-h-[100px] focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
                             placeholder="Descripción opcional del grupo..."
                             value={formData.description}
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                         />
                     </div>
 
-                    <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
                         <Button
                             type="button"
                             variant="secondary"

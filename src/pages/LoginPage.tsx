@@ -214,13 +214,13 @@ export function LoginPage() {
                             <div className="w-5 h-5 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0">
                                 <Check size={10} strokeWidth={3} />
                             </div>
-                            <span className="text-xs text-slate-500 font-medium">Free Tier</span>
+                            <span className="text-xs text-slate-500 font-medium">Tus datos, en tu servidor</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
                                 <Check size={10} strokeWidth={3} />
                             </div>
-                            <span className="text-xs text-slate-500 font-medium">No Credit Card</span>
+                            <span className="text-xs text-slate-500 font-medium">Soporte de todos los departamentos</span>
                         </div>
                     </div>
                 </div>

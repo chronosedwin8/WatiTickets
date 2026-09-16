@@ -374,7 +374,7 @@ export function Dashboard() {
                             <h3 className="text-xl font-bold mb-2">Reporte Mensual</h3>
                             <p className="text-indigo-100 text-sm mb-6 leading-relaxed">Ya está disponible el resumen detallado de rendimiento de este mes.</p>
                             <Link to="/analytics">
-                                <button className="w-full bg-white text-indigo-600 py-3 rounded-xl text-sm font-bold hover:bg-indigo-50 transition-colors shadow-lg shadow-black/10">
+                                <button className="btn-sobre-color w-full py-3 rounded-xl text-sm font-bold transition-transform hover:-translate-y-0.5 shadow-lg shadow-black/20">
                                     Ver Analytics
                                 </button>
                             </Link>
